@@ -9,8 +9,8 @@ Jupyter Python Data Analisys
 .. image:: https://img.shields.io/travis/OpenDataScienceLab/PyDataAnalysis.svg
         :target: https://travis-ci.org/OpenDataScienceLab/PyDataAnalysis
 
-.. image:: https://readthedocs.org/projects/PyDataAnalysis/badge/?version=latest
-        :target: https://PyDataAnalysis.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/pydataanalysis/badge/?version=latest
+        :target: https://pydataanalysis.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/opendatasciencelab/pydataanalysis/shield.svg

@@ -15,8 +15,7 @@ requirements = [
     'ipywidgets',
     'matplotlib',
     'pandas',
-    'numpy',
-    'textwrap'
+    'numpy'
 ]
 
 test_requirements = [

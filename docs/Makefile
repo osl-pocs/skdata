@@ -85,17 +85,17 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/PyDataAnalysis.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/vizpydata.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/PyDataAnalysis.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/vizpydata.qhc"
 
 devhelp:
 	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/PyDataAnalysis"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/PyDataAnalysis"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/vizpydata"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/vizpydata"
 	@echo "# devhelp"
 
 epub:

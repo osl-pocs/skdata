@@ -23,21 +23,21 @@ test_requirements = [
 ]
 
 setup(
-    name='PyDataAnalysis',
+    name='vipydata',
     version='0.1.0',
     description="The propose of this library/plugin is to allow the data analysis process more easy and automatic.",
     long_description=readme + '\n\n' + history,
     author="Ivan Ogasawara",
     author_email='ivan.ogasawara@gmail.com',
-    url='https://github.com/OpenDataScienceLab/PyDataAnalysis',
+    url='https://github.com/OpenDataScienceLab/vizpydata',
     packages=[
-        'PyDataAnalysis',
+        'vizpydata',
     ],
-    package_dir={'PyDataAnalysis':
-                 'PyDataAnalysis'},
+    package_dir={'vizpydata':
+                 'vizpydata'},
     entry_points={
         'console_scripts': [
-            'PyDataAnalysis=PyDataAnalysis.cli:main'
+            'vizpydata=vizpydata.cli:main'
         ]
     },
     include_package_data=True,

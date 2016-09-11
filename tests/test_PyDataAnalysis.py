@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-test_PyDataAnalysis
+test_vizpydata
 ----------------------------------
 
-Tests for `PyDataAnalysis` module.
+Tests for `vizpydata` module.
 """
 
 
@@ -13,12 +13,12 @@ import sys
 import unittest
 from contextlib import contextmanager
 
-from PyDataAnalysis.widgets import DataAnalysisWidget
-from PyDataAnalysis.utils import cross_fields, summary, make_chart
+from vizpydata.widgets import DataAnalysisWidget
+from vizpydata.utils import cross_fields, summary, make_chart
 
 
 
-class TestPydataanalysis(unittest.TestCase):
+class Testvizpydata(unittest.TestCase):
 
     def setUp(self):
         pass

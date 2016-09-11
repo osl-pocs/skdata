@@ -3,18 +3,18 @@ Jupyter Python Data Analisys
 ===============================
 
 
-.. image:: https://img.shields.io/pypi/v/PyDataAnalysis.svg
-        :target: https://pypi.python.org/pypi/PyDataAnalysis
+.. image:: https://img.shields.io/pypi/v/vizpydata.svg
+        :target: https://pypi.python.org/pypi/vizpydata
 
-.. image:: https://img.shields.io/travis/OpenDataScienceLab/PyDataAnalysis.svg
-        :target: https://travis-ci.org/OpenDataScienceLab/PyDataAnalysis
+.. image:: https://img.shields.io/travis/OpenDataScienceLab/vizpydata.svg
+        :target: https://travis-ci.org/OpenDataScienceLab/vizpydata
 
-.. image:: https://readthedocs.org/projects/pydataanalysis/badge/?version=latest
-        :target: https://pydataanalysis.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/vizpydata/badge/?version=latest
+        :target: https://vizpydata.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-.. image:: https://pyup.io/repos/github/opendatasciencelab/pydataanalysis/shield.svg
-     :target: https://pyup.io/repos/github/opendatasciencelab/pydataanalysis/
+.. image:: https://pyup.io/repos/github/opendatasciencelab/vizpydata/shield.svg
+     :target: https://pyup.io/repos/github/opendatasciencelab/vizpydata/
      :alt: Updates
 
 
@@ -22,7 +22,7 @@ The propose of this library/plugin is to allow the data analysis process more ea
 
 
 * Free software: MIT license
-* Documentation: https://PyDataAnalysis.readthedocs.io.
+* Documentation: https://vizpydata.readthedocs.io.
 
 
 Features

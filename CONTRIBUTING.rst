@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/xmnlab/PyDataAnalysis/issues.
+Report bugs at https://github.com/xmnlab/vizpydata/issues.
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/xmnlab/PyDataAnalysis/issues.
+The best way to send feedback is to file an issue at https://github.com/xmnlab/vizpydata/issues.
 
 If you are proposing a feature:
 
@@ -57,17 +57,17 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `PyDataAnalysis` for local development.
+Ready to contribute? Here's how to set up `vizpydata` for local development.
 
-1. Fork the `PyDataAnalysis` repo on GitHub.
+1. Fork the `vizpydata` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@github.com:your_name_here/PyDataAnalysis.git
+    $ git clone git@github.com:your_name_here/vizpydata.git
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
-    $ mkvirtualenv PyDataAnalysis
-    $ cd PyDataAnalysis/
+    $ mkvirtualenv vizpydata
+    $ cd vizpydata/
     $ python setup.py develop
 
 4. Create a branch for local development::
@@ -78,7 +78,7 @@ Ready to contribute? Here's how to set up `PyDataAnalysis` for local development
 
 5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
 
-    $ flake8 PyDataAnalysis tests
+    $ flake8 vizpydata tests
     $ python setup.py test or py.test
     $ tox
 
@@ -102,7 +102,7 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
 3. The pull request should work for Python 3.4 and 3.5. Check
-   https://travis-ci.org/xmnlab/PyDataAnalysis/pull_requests
+   https://travis-ci.org/xmnlab/vizpydata/pull_requests
    and make sure that the tests pass for all supported Python versions.
 
 Tips
@@ -111,4 +111,4 @@ Tips
 To run a subset of tests::
 
 
-    $ python -m unittest tests.test_PyDataAnalysis
+    $ python -m unittest tests.test_vizpydata

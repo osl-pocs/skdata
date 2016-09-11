@@ -9,7 +9,7 @@ import textwrap
 import traceback
 
 # locals
-from PyDataAnalysis.utils import cross_fields, make_chart, summary
+from vizpydata.utils import cross_fields, make_chart, summary
 
 
 class DataAnalysisWidget:

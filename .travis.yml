@@ -2,9 +2,10 @@
 # This file will be regenerated if you run travis_pypi_setup.py
 
 language: python
-python: 3.5
+python: 3.6
 
 env:
+  - TOXENV=py36
   - TOXENV=py35
   - TOXENV=py34
 
@@ -24,5 +25,5 @@ deploy:
     secure: PLEASE_REPLACE_ME
   on:
     tags: true
-    repo: xmnlab/vizpydata
+    repo: OpenDataScienceLab/skdata
     condition: $TOXENV == py27

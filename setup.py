@@ -29,15 +29,15 @@ setup(
     long_description=readme + '\n\n' + history,
     author="Ivan Ogasawara",
     author_email='ivan.ogasawara@gmail.com',
-    url='https://github.com/OpenDataScienceLab/vizpydata',
+    url='https://github.com/OpenDataScienceLab/skdata',
     packages=[
-        'vizpydata',
+        'skdata',
     ],
-    package_dir={'vizpydata':
-                 'vizpydata'},
+    package_dir={'skdata':
+                 'skdata'},
     entry_points={
         'console_scripts': [
-            'vizpydata=vizpydata.cli:main'
+            'skdata=skdata.cli:main'
         ]
     },
     include_package_data=True,

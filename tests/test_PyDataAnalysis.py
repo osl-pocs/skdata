@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-test_vizpydata
+test_skdata
 ----------------------------------
 
-Tests for `vizpydata` module.
+Tests for `skdata` module.
 """
 
 
@@ -13,12 +13,12 @@ import sys
 import unittest
 from contextlib import contextmanager
 
-from vizpydata.widgets import DataAnalysisWidget
-from vizpydata.utils import cross_fields, summary, make_chart
+from skdata.widgets import DataAnalysisWidget
+from skdata.utils import cross_fields, summary, make_chart
 
 
 
-class Testvizpydata(unittest.TestCase):
+class Testskdata(unittest.TestCase):
 
     def setUp(self):
         pass

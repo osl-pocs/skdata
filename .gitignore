@@ -60,3 +60,4 @@ target/
 
 # Jupyter
 .ipynb_checkpoints
+.idea/

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from IPython.display import display, HTML
-from ipywidgets import widgets, interactive, IntSlider
+from IPython.display import display
 from matplotlib import pyplot as plt
 
 import numpy as np
@@ -12,18 +11,26 @@ import traceback
 def summary(data: pd.DataFrame):
     """
     
-    """   
+    """
     # types
     df = pd.DataFrame(data.dtypes).rename(columns={0: 'Types'})
-    
+
     # set
     df = pd.merge(
         df, pd.DataFrame(
-            data.apply(lambda se : str(sorted(set(se.dropna())))[:1000])
+            data.apply(lambda se: str(sorted(set(se.dropna())))[:1000])
         ).rename(columns={0: 'Set Values'}),
         left_index=True, right_index=True
     )
-    
+
+    # count set
+    df = pd.merge(
+        df, pd.DataFrame(
+            data.apply(lambda se: se.dropna().unique().shape[0])
+        ).rename(columns={0: 'Count Set'}),
+        left_index=True, right_index=True
+    )
+
     # total observations
     df = pd.merge(
         df, pd.DataFrame(
@@ -31,7 +38,7 @@ def summary(data: pd.DataFrame):
         ).rename(columns={0: '# Observations'}),
         left_index=True, right_index=True
     )
-    
+
     # total of nan
     df = pd.merge(
         df, pd.DataFrame(data.isnull().sum()).rename(columns={0: '# NaN'}),
@@ -60,8 +67,8 @@ def make_chart(data: pd.DataFrame, ax: plt.Axes):
 
 
 def cross_fields(
-    data: pd.DataFrame, 
-    field_reference: str, 
+    data: pd.DataFrame,
+    field_reference: str,
     fields_comparison: [str],
     bins: int
 ) -> pd.DataFrame:
@@ -81,9 +88,9 @@ def cross_fields(
                 _data[f], _ = pd.cut(data[f].copy(), bins=bins, retbins=True)
         except:
             pass
-            
+
     return pd.crosstab(
-        [_data[f] for f in fields_comparison], 
+        [_data[f] for f in fields_comparison],
         _data[field_reference]
     )
 

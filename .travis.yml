@@ -26,4 +26,4 @@ deploy:
   on:
     tags: true
     repo: OpenDataScienceLab/skdata
-    condition: $TOXENV == py27
+    condition: $TOXENV == py36

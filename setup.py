@@ -23,7 +23,7 @@ test_requirements = [
 ]
 
 setup(
-    name='vipydata',
+    name='skdata',
     version='0.1.0',
     description="The propose of this library/plugin is to allow the data analysis process more easy and automatic.",
     long_description=readme + '\n\n' + history,

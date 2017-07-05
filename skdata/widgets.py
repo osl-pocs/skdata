@@ -6,7 +6,7 @@ import pandas as pd
 
 # locals
 from .utils import cross_fields, make_chart, summary
-from . import cleanning
+from . import cleaning
 
 
 class DataAnalysisWidget:
@@ -25,7 +25,7 @@ class DataAnalysisWidget:
         :return:
 
         """
-        cleanning.drop_columns_with_unique_values(self.data, threshold)
+        cleaning.drop_columns_with_unique_values(self.data, threshold)
 
     def dropna_columns(self, threshold: int=0.15):
         """
@@ -33,7 +33,7 @@ class DataAnalysisWidget:
         :param threshold: 
         :return: 
         """
-        cleanning.dropna_columns(self.data, threshold)
+        cleaning.dropna_columns(self.data, threshold)
 
     @staticmethod
     def load(filepath: str):
@@ -45,7 +45,7 @@ class DataAnalysisWidget:
         """
         fields: {'field_name1': {old_value: new_value}}
         """
-        cleanning.prepare_categorical_data(self.data, fields)
+        cleaning.prepare_categorical_data(self.data, fields)
 
     def reset_changes(self):
         self.data = self._data.copy()

@@ -30,6 +30,7 @@ setup(
     author="Ivan Ogasawara",
     author_email='ivan.ogasawara@gmail.com',
     url='https://github.com/OpenDataScienceLab/skdata',
+    download_url = 'https://github.com/OpenDataScienceLab/skdata/archive/master.tar.gz',
     packages=[
         'skdata',
     ],

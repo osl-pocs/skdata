@@ -4,7 +4,7 @@ Scikit Data Analysis
 
 
 .. image:: https://img.shields.io/pypi/v/skdata.svg
-        :target: https://pypi.python.org/pypi/skdata
+        :target: https://pypi.python.org/pypi/scikit-data
 
 .. image:: https://img.shields.io/travis/OpenDataScienceLab/skdata.svg
         :target: https://travis-ci.org/OpenDataScienceLab/skdata
@@ -12,10 +12,6 @@ Scikit Data Analysis
 .. image:: https://readthedocs.org/projects/skdata/badge/?version=latest
         :target: https://skdata.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
-
-.. image:: https://pyup.io/repos/github/opendatasciencelab/skdata/shield.svg
-     :target: https://pyup.io/repos/github/opendatasciencelab/skdata/
-     :alt: Updates
 
 
 The propose of this library/plugin is to allow the data analysis process more easy and automatic.

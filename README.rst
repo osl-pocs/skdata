@@ -21,7 +21,7 @@ This library is based on some important libraries as:
 - pandas;
 - jupyter;
 - matplotlib;
-- etc;
+- scikit-learn;
 
 
 * Free software: MIT license
@@ -31,28 +31,35 @@ This library is based on some important libraries as:
 Features
 --------
 
-Initially these books will be used as reference to guide this project:
+Books used as reference to guide this project:
 
 - https://www.packtpub.com/big-data-and-business-intelligence/clean-data
 - https://www.packtpub.com/big-data-and-business-intelligence/python-data-analysis
+
+Some other materials used as reference:
+
+- https://github.com/rsouza/MMD/blob/master/notebooks/3.1_Kaggle_Titanic.ipynb
+- https://github.com/agconti/kaggle-titanic/blob/master/Titanic.ipynb
+- https://github.com/donnemartin/data-science-ipython-notebooks/blob/master/kaggle/titanic.ipynb
+
 
 This project contemplates the follow features:
 
 - Data conversions:
 
-  - TODO
+  - soon ...
 - Data collection:
 
-  - TODO
+  - soon ...
 - Data cleaning:
 
   - ...
 - Data storage:
 
-  - TODO
+  - soon ...
 - Data integration:
 
-  - TODO
+  - soon ...
 - Data manipulation:
 
   - ...

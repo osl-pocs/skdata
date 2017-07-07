@@ -1,9 +1,9 @@
 ===============================
-Scikit Data Analysis
+SciKit Data Analysis
 ===============================
 
 
-.. image:: https://img.shields.io/pypi/v/skdata.svg
+.. image:: https://img.shields.io/pypi/v/scikit-data.svg
         :target: https://pypi.python.org/pypi/scikit-data
 
 .. image:: https://img.shields.io/travis/OpenDataScienceLab/skdata.svg
@@ -14,7 +14,14 @@ Scikit Data Analysis
         :alt: Documentation Status
 
 
-The propose of this library/plugin is to allow the data analysis process more easy and automatic.
+The propose of this library is to allow the data analysis process more easy and automatic.
+
+This library is based on some important libraries as:
+
+- pandas;
+- jupyter;
+- matplotlib;
+- etc;
 
 
 * Free software: MIT license
@@ -24,5 +31,31 @@ The propose of this library/plugin is to allow the data analysis process more ea
 Features
 --------
 
-* TODO
+Initially these books will be used as reference to guide this project:
 
+- https://www.packtpub.com/big-data-and-business-intelligence/clean-data
+- https://www.packtpub.com/big-data-and-business-intelligence/python-data-analysis
+
+This project contemplates the follow features:
+
+- Data conversions:
+
+  - TODO
+- Data collection:
+
+  - TODO
+- Data cleaning:
+
+  - ...
+- Data storage:
+
+  - TODO
+- Data integration:
+
+  - TODO
+- Data manipulation:
+
+  - ...
+- Outliers removal:
+
+  - ...

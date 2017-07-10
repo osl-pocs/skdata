@@ -1,5 +1,5 @@
 ===============================
-SciKit Data Analysis
+SciKit Data
 ===============================
 
 
@@ -14,6 +14,21 @@ SciKit Data Analysis
         :alt: Documentation Status
 
 
+Conda package current release info
+====================
+
+.. image:: https://anaconda.org/conda-forge/scikit-data/badges/version.svg
+        :target: https://anaconda.org/conda-forge/scikit-data
+        :alt: Anaconda-Server Badge
+
+.. image:: https://anaconda.org/conda-forge/scikit-data/badges/downloads.svg
+        :target: https://anaconda.org/conda-forge/scikit-data
+        :alt: Anaconda-Server Badge
+
+
+About SciKit Data
+=================
+
 The propose of this library is to allow the data analysis process more easy and automatic.
 
 This library is based on some important libraries as:
@@ -26,7 +41,6 @@ This library is based on some important libraries as:
 
 * Free software: MIT license
 * Documentation: https://skdata.readthedocs.io.
-
 
 Features
 --------
@@ -66,3 +80,4 @@ This project contemplates the follow features:
 - Outliers removal:
 
   - ...
+

@@ -55,7 +55,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Jupyter Python Data Analisys'
+project = u'SciKit Data'
 copyright = u"2016, Ivan Ogasawara"
 
 # The version info for the project you're documenting, acts as replacement
@@ -209,7 +209,7 @@ latex_elements = {
 # [howto/manual]).
 latex_documents = [
     ('index', 'skdata.tex',
-     u'Jupyter Python Data Analisys Documentation',
+     u'SciKit Data Documentation',
      u'Ivan Ogasawara', 'manual'),
 ]
 

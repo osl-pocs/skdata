@@ -4,17 +4,38 @@
 Installation
 ============
 
+Using conda
+-----------
 
-Stable release
---------------
+Installing `scikit-data` from the `conda-forge` channel can be achieved by adding `conda-forge` to your channels with:
 
-To install Jupyter Python Data Analisys, run this command in your terminal:
+.. code-block:: console
+
+   $ conda config --add channels conda-forge
+
+
+Once the `conda-forge` channel has been enabled, `scikit-data` can be installed with:
+
+.. code-block:: console
+
+   $ conda install scikit-data
+
+
+It is possible to list all of the versions of `scikit-data` available on your platform with:
+
+.. code-block:: console
+
+   $ conda search scikit-data --channel conda-forge
+
+
+Using pip
+---------
+
+To install scikit-data, run this command in your terminal:
 
 .. code-block:: console
 
     $ pip install skdata
-
-This is the preferred method to install Jupyter Python Data Analisys, as it will always install the most recent stable release. 
 
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
@@ -26,7 +47,7 @@ you through the process.
 From sources
 ------------
 
-The sources for Jupyter Python Data Analisys can be downloaded from the `Github repo`_.
+The sources for scikit-data can be downloaded from the `Github repo`_.
 
 You can either clone the public repository:
 

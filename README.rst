@@ -81,3 +81,47 @@ This project contemplates the follow features:
 
   - ...
 
+
+Installing scikit-data
+======================
+
+Using conda
+-----------
+
+Installing `scikit-data` from the `conda-forge` channel can be achieved by adding `conda-forge` to your channels with:
+
+.. code-block:: console
+
+   $ conda config --add channels conda-forge
+
+
+Once the `conda-forge` channel has been enabled, `scikit-data` can be installed with:
+
+.. code-block:: console
+
+   $ conda install scikit-data
+
+
+It is possible to list all of the versions of `scikit-data` available on your platform with:
+
+.. code-block:: console
+
+   $ conda search scikit-data --channel conda-forge
+
+
+Using pip
+---------
+
+To install scikit-data, run this command in your terminal:
+
+.. code-block:: console
+
+    $ pip install skdata
+
+If you don't have `pip`_ installed, this `Python installation guide`_ can guide
+you through the process.
+
+.. _pip: https://pip.pypa.io
+.. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
+
+

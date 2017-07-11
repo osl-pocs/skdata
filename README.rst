@@ -49,6 +49,7 @@ Books used as reference to guide this project:
 
 - https://www.packtpub.com/big-data-and-business-intelligence/clean-data
 - https://www.packtpub.com/big-data-and-business-intelligence/python-data-analysis
+- https://www.packtpub.com/big-data-and-business-intelligence/mastering-machine-learning-scikit-learn
 
 Some other materials used as reference:
 

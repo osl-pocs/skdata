@@ -3,3 +3,4 @@ coverage
 Sphinx
 cryptography
 PyYAML
+jupyter_nbextensions_configurator

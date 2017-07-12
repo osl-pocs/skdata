@@ -9,7 +9,7 @@ from .utils import cross_fields, make_chart, summary
 from . import cleaning
 
 
-class DataAnalysisWidget:
+class SkDataWidget:
     def __init__(
         self, data: pd.DataFrame
     ):
@@ -18,10 +18,10 @@ class DataAnalysisWidget:
 
     def drop_columns_with_unique_values(self, threshold: int = 0.25):
         """
-        Remove columns when the proportion of the set of values is more than 
+        Remove columns when the proportion of the set of values is more than
         the threshold
 
-        :param threshold: 
+        :param threshold:
         :return:
 
         """
@@ -29,9 +29,9 @@ class DataAnalysisWidget:
 
     def dropna_columns(self, threshold: int=0.15):
         """
-        
-        :param threshold: 
-        :return: 
+
+        :param threshold:
+        :return:
         """
         cleaning.dropna_columns(self.data, threshold)
 
@@ -39,7 +39,7 @@ class DataAnalysisWidget:
     def load(filepath: str):
         """
         """
-        return DataAnalysisWidget(pd.read_csv(filepath))
+        return SkDataWidget(pd.read_csv(filepath))
 
     def prepare_data(self, fields: dict):
         """

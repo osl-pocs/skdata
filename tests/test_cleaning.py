@@ -25,25 +25,21 @@ class TestCleaning(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_000_prepare_categorical_data(self):
+    def test_000_categorize(self):
         _data = self.data.copy()
 
         survived_dict = {0: 'Died', 1: 'Survived'}
         pclass_dict = {1: 'Upper Class', 2: 'Middle Class', 3: 'Lower Class'}
-        sex_dict = {'male': 'Male', 'female': 'Female'}
         embarked_dict = {
             'C': 'Cherbourg', 'Q': 'Queenstown', 'S': 'Southampton'
         }
 
-        cleaning.prepare_categorical_data(
-            data=_data,
-            fields={
-                'Survived': survived_dict,
-                'Pclass': pclass_dict,
-                'Sex': sex_dict,
-                'Embarked': embarked_dict
-            }
-        )
+        _data.Embarked.replace(embarked_dict, inplace=True)
+
+        cleaning.categorize(_data, 'Survived', survived_dict)
+        cleaning.categorize(_data, 'Pclass', pclass_dict)
+        cleaning.categorize(_data, 'Sex')
+        cleaning.categorize(_data, 'Embarked')
 
         assert _data.Survived.dtype == 'category'
         assert _data.Pclass.dtype == 'category'
@@ -56,7 +52,7 @@ class TestCleaning(unittest.TestCase):
         assert 'Name' in _data.keys()
         assert 'Ticket' in _data.keys()
 
-        cleaning.drop_columns_with_unique_values(data=_data, threshold=0.3)
+        cleaning.drop_columns_with_unique_values(data=_data, max_unique_values=0.3)
 
         assert 'Name' not in _data.keys()
         assert 'Ticket' not in _data.keys()
@@ -66,7 +62,7 @@ class TestCleaning(unittest.TestCase):
 
         assert 'Age' in _data
 
-        cleaning.dropna_columns(data=_data, threshold=0.1)
+        cleaning.dropna_columns(data=_data, max_na_values=0.1)
 
         assert 'Age' not in _data
 

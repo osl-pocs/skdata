@@ -2,101 +2,132 @@ from IPython.display import display
 from ipywidgets import widgets, interactive, IntSlider
 from matplotlib import pyplot as plt
 
-import pandas as pd
-
-# locals
-from .utils import cross_fields, make_chart, summary
-from . import cleaning
+# locals from import
+from .utils import cross_fields, make_chart
+from .data import SkData
 
 
 class SkDataWidget:
+    """
+
+    """
+    def __call__(self, *args, **kwargs):
+        return self.skd
+
     def __init__(
-        self, data: pd.DataFrame
+        self, skd: SkData
     ):
-        self._data = data
-        self.data = self._data.copy()
-
-    def drop_columns_with_unique_values(self, threshold: int = 0.25):
         """
-        Remove columns when the proportion of the set of values is more than
-        the threshold
 
-        :param threshold:
+        :param skd:
+        """
+        self.skd = skd
+
+    def show_chart(
+        self, field_reference: str=None, fields_comparison: [str]=None
+    ):
+        """
+
+        :param field_reference:
+        :param fields_comparison:
         :return:
 
         """
-        cleaning.drop_columns_with_unique_values(self.data, threshold)
+        all_fields = list(self.skd().keys())
 
-    def dropna_columns(self, threshold: int=0.15):
-        """
+        if field_reference is None:
+            if self.skd.target is None:
+                field_reference = all_fields[0]
+            else:
+                field_reference = self.skd.target.name
 
-        :param threshold:
-        :return:
-        """
-        cleaning.dropna_columns(self.data, threshold)
+        if fields_comparison is None:
+            fields_comparison = [all_fields[1]]
 
-    @staticmethod
-    def load(filepath: str):
-        """
-        """
-        return SkDataWidget(pd.read_csv(filepath))
-
-    def prepare_data(self, fields: dict):
-        """
-        fields: {'field_name1': {old_value: new_value}}
-        """
-        cleaning.prepare_categorical_data(self.data, fields)
-
-    def reset_changes(self):
-        self.data = self._data.copy()
-
-    def summary(self):
-        return summary(self.data)
-
-    def _interative_show_chart(
-        self, field_reference: str, fields_comparison: [str], bins
-    ):
-        ax = plt.figure().gca()
-
-        _data = cross_fields(
-            data=self.data,
-            field_reference=field_reference,
-            fields_comparison=fields_comparison,
-            bins=bins
-        )
-
-        display(_data)
-        make_chart(data=_data, ax=ax)
-
-    def show_chart(self, field_reference: str, fields_comparison: [str]):
-
+        # bins widget
         w_bins = IntSlider(min=2, max=10, value=2)
+
+        # fields comparison widget
         w_fields_comparison = widgets.SelectMultiple(
             description='Xs:',
-            options=[i for i in self.data.keys()],
+            options=all_fields,
             selected_labels=fields_comparison
         )
+        w_fields_comparison.value = fields_comparison
 
+        # field reference widget
         w_field_reference = widgets.Dropdown(
             description='Y:',
-            options=[i for i in self.data.keys()],
+            options=all_fields,
             selected_label=field_reference
         )
+        w_field_reference.value = field_reference
 
-        return interactive(
-            self._interative_show_chart,
-            field_reference=w_field_reference,
-            fields_comparison=w_fields_comparison,
-            bins=w_bins
+        # display data and chart
+        ax = plt.figure().gca()
+
+        def display_data(field_reference, fields_comparison, bins):
+            _data = cross_fields(
+                data=self.skd.data,
+                field_reference=field_reference,
+                fields_comparison=fields_comparison,
+                bins=bins
+            )
+
+            display(_data)
+            make_chart(data=_data, ax=ax)
+
+        # observe hooks
+        def w_bins_change(change):
+            display_data(
+                w_field_reference.value,
+                w_fields_comparison.value,
+                change['new']
+            )
+        w_bins.observe(w_bins_change, 'value')
+
+        def w_f_comparison_change(change):
+            display_data(
+                w_field_reference.value,
+                change['new'],
+                w_bins.value
+            )
+        w_fields_comparison.observe(w_f_comparison_change, 'value')
+
+        def w_f_reference_change(change):
+            display_data(
+                change['new'],
+                w_fields_comparison.value,
+                w_bins.value
+            )
+        w_field_reference.observe(w_f_reference_change, 'value')
+
+        display(
+            w_field_reference,
+            w_fields_comparison,
+            w_bins
         )
 
-    def _interative_show_panel_chart(
+        display_data(
+            w_field_reference.value,
+            w_fields_comparison.value,
+            w_bins.value
+        )
+
+    def _interactive_show_panel_chart(
         self, field_reference: str, fields_comparison: [str], bins
     ):
+        """
+
+        :param field_reference:
+        :param fields_comparison:
+        :param bins:
+        :return:
+        """
         ax = plt.figure().gca()
 
         _data = cross_fields(
-            data=self.data,
+            data=self.skd.data,
             field_reference=field_reference,
             fields_comparison=fields_comparison,
             bins=bins
@@ -106,23 +137,27 @@ class SkDataWidget:
         make_chart(data=_data, ax=ax)
 
     def show_panel_chart(self, field_reference: str):
+        """
 
+        :param field_reference:
+        :return:
+        """
         w_bins = IntSlider(min=2, max=10, value=2)
         w_field_reference = widgets.Dropdown(
             description='Y:',
-            options=[i for i in self.data.keys()],
+            options=[i for i in self.skd.data.keys()],
             selected_label=field_reference
         )
         w_fields_comparison = widgets.SelectMultiple(
             description='Xs:',
-            options=[i for i in self.data.keys()],
+            options=[i for i in self.skd.data.keys()],
             selected_labels=[
-                i for i in self.data.keys() if not i == field_reference
+                i for i in self.skd.data.keys() if not i == field_reference
             ]
         )
 
         return interactive(
-            self._interative_show_panel_chart,
+            self._interactive_show_panel_chart,
             field_reference=w_field_reference,
             fields_comparison=w_fields_comparison,
             bins=w_bins
@@ -130,4 +165,3 @@ class SkDataWidget:
 
     def __repr__(self):
         return ''
-

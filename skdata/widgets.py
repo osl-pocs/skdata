@@ -66,11 +66,12 @@ class SkDataWidget:
         # display data and chart
         ax = plt.figure().gca()
 
-        def display_data(field_reference, fields_comparison, bins):
+        def display_data(_field_reference, _fields_comparison, bins):
+            ax.cla()
             _data = cross_fields(
                 data=self.skd.data,
-                field_reference=field_reference,
-                fields_comparison=fields_comparison,
+                field_reference=_field_reference,
+                fields_comparison=_fields_comparison,
                 bins=bins
             )
 

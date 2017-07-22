@@ -6,8 +6,6 @@ import base64
 import io
 import numpy as np
 import pandas as pd
-import textwrap
-import traceback
 
 
 def summary(data: pd.DataFrame):
@@ -86,19 +84,27 @@ def plot2html(df: pd.DataFrame, display_id, **kwargs) -> [plt.figure]:
     :param kwargs:
     :return:
     """
-    ax = plt.figure().gca()
-
-    df.plot(ax=ax, legend=True, **kwargs)
-
     with io.BytesIO() as f:
-        plt.grid(True)
-        plt.xticks(rotation=45)
-        plt.tight_layout()
+        if 'field_reference' in kwargs:  # multi chart
+            axs = plt.figure().subplot()
 
+        else:
+            ax = plt.figure().gca()
+
+            df.plot(ax=ax, legend=True, **kwargs)
+
+            ax.grid(True)
+
+            for tick in ax.get_xticklabels():
+                tick.set_rotation(45)
+
+        plt.tight_layout()
         plt.savefig(f)
+
         f.seek(0)
         img = base64.b64encode(f.getvalue()).decode('utf8')
-    plt.close()
+
+        plt.close()
 
     update_display(
         HTML('<img src="data:image/png;base64,%s">' % img),

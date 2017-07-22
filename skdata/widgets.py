@@ -14,7 +14,8 @@ class SkDataWidget:
 
     """
     def __call__(self, *args, **kwargs):
-        return self.skd
+        # show dashboard
+        return self.show_chart(*args, **kwargs)
 
     def __init__(
         self, skd: SkData
@@ -24,6 +25,9 @@ class SkDataWidget:
         :param skd:
         """
         self.skd = skd
+
+    def get_data(self):
+        return self.skd()
 
     def show_chart(
         self, field_reference: str=None, fields_comparison: [str]=None
@@ -50,12 +54,11 @@ class SkDataWidget:
         display_table_id = 'table_id_%s' % np.random.randint(10000)
         display_chart_id = 'chart_id_%s' % np.random.randint(10000)
 
-        # layout widgets
-        w_out_data = widgets.Output()
-        w_out_chart = widgets.Output()
-
-        w_accordion = widgets.Accordion(
-            children=[w_out_data, w_out_chart]
+        # chart type widget
+        w_chart_type = widgets.RadioButtons(
+            options=['individual', 'grouped'],
+            value='grouped',
+            description='Chart Type:'
         )
 
         # bins widget
@@ -87,15 +90,68 @@ class SkDataWidget:
             w_bins
         ])
 
-        # display data and chart
-        def display_data(
-            _field_reference: str, _fields_comparison: list or tuple, bins: int
+        # layout widgets
+        w_out_data = widgets.Output()
+        w_out_chart = widgets.Output()
+
+        w_vbox_chart = widgets.VBox([w_chart_type, w_out_chart])
+
+        w_accordion = widgets.Accordion(
+            children=[w_out_data, w_vbox_chart]
+        )
+
+        def plot_chart(
+            _field_reference: str,
+            _fields_comparison: list,
+            _bins: int,
+            _chart_type: str
         ):
             """
 
             :param _field_reference:
             :param _fields_comparison:
-            :param bins:
+            :param _bins:
+            :param chart_type:
+            :return:
+            """
+            _chart_param = {}
+
+            if _chart_type == 'grouped':
+                # create a cross tab
+                _data = cross_fields(
+                    data=self.skd.data,
+                    field_reference=_field_reference,
+                    fields_comparison=_fields_comparison,
+                    bins=_bins
+                )
+            else:
+                _data = self.skd.data,
+                _chart_param.update(dict(
+                    field_reference=_field_reference,
+                    fields_comparison=_fields_comparison,
+                ))
+
+            # display chart
+            with w_accordion.children[1].children[1]:
+                plot2html(
+                    _data, display_id=display_chart_id,
+                    kind='bar',
+                    title='Titanic',
+                    stacked=True,
+                    **_chart_param
+                )
+
+        # display data and chart
+        def display_data(
+            _field_reference: str, _fields_comparison: list or tuple,
+            _bins: int, _chart_type: str
+        ):
+            """
+
+            :param _field_reference:
+            :param _fields_comparison:
+            :param _bins:
+            :param _chart_type:
             :return:
             """
             # create a cross tab
@@ -103,7 +159,7 @@ class SkDataWidget:
                 data=self.skd.data,
                 field_reference=_field_reference,
                 fields_comparison=_fields_comparison,
-                bins=bins
+                bins=_bins
             )
 
             # display data table
@@ -111,13 +167,12 @@ class SkDataWidget:
                 update_display(_data, display_id=display_table_id)
 
             # display chart
-            with w_accordion.children[1]:
-                plot2html(
-                    _data, display_id=display_chart_id,
-                    kind='bar',
-                    stacked=True,
-                    title='Titanic'
-                )
+            plot_chart(
+                _field_reference,
+                _fields_comparison,
+                _bins,
+                _chart_type
+            )
 
             # disable slider bins if no fields are numerical
             _fields = [_field_reference] + list(_fields_comparison)
@@ -127,6 +182,19 @@ class SkDataWidget:
             w_bins.layout.visibility = _visibility[
                 float in _dtypes or int in _dtypes
             ]
+
+        def w_chart_type_change(change: dict):
+            """
+
+            :param change:
+            :return:
+            """
+            plot_chart(
+                w_field_reference.value,
+                w_fields_comparison.value,
+                w_bins.value,
+                change['new']
+            )
 
         # observe hooks
         def w_bins_change(change: dict):
@@ -138,7 +206,8 @@ class SkDataWidget:
             display_data(
                 w_field_reference.value,
                 w_fields_comparison.value,
-                change['new']
+                change['new'],
+                w_chart_type.value
             )
 
         def w_f_reference_change(change: dict):
@@ -167,7 +236,8 @@ class SkDataWidget:
             display_data(
                 change['new'],
                 w_fields_comparison.value,
-                w_bins.value
+                w_bins.value,
+                w_chart_type.value
             )
 
             w_f_reference_changed[0] = False  # flow control variable
@@ -182,7 +252,8 @@ class SkDataWidget:
                 display_data(
                     w_field_reference.value,
                     change['new'],
-                    w_bins.value
+                    w_bins.value,
+                    w_chart_type.value
                 )
 
         # change accordion settings
@@ -194,13 +265,14 @@ class SkDataWidget:
             display('', display_id=display_table_id)
 
         # chart panel
-        with w_accordion.children[1]:
+        with w_accordion.children[1].children[1]:
             display('', display_id=display_chart_id)
 
         # create observe callbacks
         w_bins.observe(w_bins_change, 'value')
         w_field_reference.observe(w_f_reference_change, 'value')
         w_fields_comparison.observe(w_f_comparison_change, 'value')
+        w_chart_type.observe(w_chart_type_change, 'value')
 
         # display widgets
         display(w_box_filter_panel, w_accordion)
@@ -209,56 +281,8 @@ class SkDataWidget:
         display_data(
             w_field_reference.value,
             w_fields_comparison.value,
-            w_bins.value
-        )
-
-    def _interactive_show_panel_chart(
-        self, field_reference: str, fields_comparison: [str], bins
-    ):
-        """
-
-        :param field_reference:
-        :param fields_comparison:
-        :param bins:
-        :return:
-        """
-        ax = plt.figure().gca()
-
-        _data = cross_fields(
-            data=self.skd.data,
-            field_reference=field_reference,
-            fields_comparison=fields_comparison,
-            bins=bins
-        )
-
-        display(_data)
-        make_chart(data=_data, ax=ax)
-
-    def show_panel_chart(self, field_reference: str):
-        """
-
-        :param field_reference:
-        :return:
-        """
-        w_bins = IntSlider(min=2, max=10, value=2)
-        w_field_reference = widgets.Dropdown(
-            description='Y:',
-            options=[i for i in self.skd.data.keys()],
-            selected_label=field_reference
-        )
-        w_fields_comparison = widgets.SelectMultiple(
-            description='Xs:',
-            options=[i for i in self.skd.data.keys()],
-            selected_labels=[
-                i for i in self.skd.data.keys() if not i == field_reference
-            ]
-        )
-
-        return interactive(
-            self._interactive_show_panel_chart,
-            field_reference=w_field_reference,
-            fields_comparison=w_fields_comparison,
-            bins=w_bins
+            w_bins.value,
+            w_chart_type.value,
         )
 
     def __repr__(self):

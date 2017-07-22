@@ -1,10 +1,12 @@
-from IPython.display import display
+from IPython.display import display, update_display
 from ipywidgets import widgets, interactive, IntSlider
 from matplotlib import pyplot as plt
 
 # locals from import
 from .utils import cross_fields, make_chart
 from .data import SkData
+
+import numpy as np
 
 
 class SkDataWidget:
@@ -44,30 +46,58 @@ class SkDataWidget:
         if fields_comparison is None:
             fields_comparison = [all_fields[1]]
 
+        # layout widgets
+        out_data = widgets.Output()
+        out_chart = widgets.Output()
+
+        accordion = widgets.Accordion(
+            children=[out_data, out_chart]
+        )
+        accordion.set_title(0, 'Data')
+        accordion.set_title(1, 'Chart')
+
+        # data panel
+        with accordion.children[0]:
+            display_table_id = 'table_id_%s' % np.random.randint(10000)
+            display('', display_id=display_table_id)
+
+        # chart panel
+        ax = [None]
+        with accordion.children[1]:
+            ax[0] = plt.figure().gca()
+            plt.show()
+
         # bins widget
-        w_bins = IntSlider(min=2, max=10, value=2)
+        w_bins = IntSlider(min=2, max=10, value=2, continuous_update=False)
 
         # fields comparison widget
         w_fields_comparison = widgets.SelectMultiple(
             description='Xs:',
-            options=all_fields,
-            selected_labels=fields_comparison
+            options=[f for f in all_fields if not f == field_reference],
+            value=fields_comparison
         )
-        w_fields_comparison.value = fields_comparison
+        # used to internal flow control
+        w_f_reference_changed = [False]
 
         # field reference widget
         w_field_reference = widgets.Dropdown(
             description='Y:',
             options=all_fields,
-            selected_label=field_reference
+            value=field_reference
         )
-        w_field_reference.value = field_reference
 
         # display data and chart
-        ax = plt.figure().gca()
+        def display_data(
+            _field_reference: str, _fields_comparison: list or tuple, bins: int
+        ):
+            """
 
-        def display_data(_field_reference, _fields_comparison, bins):
-            ax.cla()
+            :param _field_reference:
+            :param _fields_comparison:
+            :param bins:
+            :return:
+            """
+            # create a cross tab
             _data = cross_fields(
                 data=self.skd.data,
                 field_reference=_field_reference,
@@ -75,11 +105,32 @@ class SkDataWidget:
                 bins=bins
             )
 
-            display(_data)
-            make_chart(data=_data, ax=ax)
+            # display data table
+            with accordion.children[0]:
+                update_display(_data, display_id=display_table_id)
+
+            # display chart
+            with accordion.children[1]:
+                # clear chart plot
+                ax[0].cla()
+                make_chart(data=_data, ax=ax[0])
+
+            # disable slider bins if no fields are numerical
+            _fields = [_field_reference] + list(_fields_comparison)
+            _dtypes = self.skd.data[_fields].dtypes.values
+            _visibility = {True: 'visible', False: 'hidden'}
+
+            w_bins.layout.visibility = _visibility[
+                float in _dtypes or int in _dtypes
+            ]
 
         # observe hooks
-        def w_bins_change(change):
+        def w_bins_change(change: dict):
+            """
+
+            :param change:
+            :return:
+            """
             display_data(
                 w_field_reference.value,
                 w_fields_comparison.value,
@@ -87,26 +138,58 @@ class SkDataWidget:
             )
         w_bins.observe(w_bins_change, 'value')
 
-        def w_f_comparison_change(change):
-            display_data(
-                w_field_reference.value,
-                change['new'],
-                w_bins.value
-            )
-        w_fields_comparison.observe(w_f_comparison_change, 'value')
+        def w_f_reference_change(change: dict):
+            """
 
-        def w_f_reference_change(change):
+            :param change:
+            :return:
+            """
+            # remove reference field from the comparison field list
+            _fields_comparison = [
+                f for f in all_fields
+                if not f == change['new']
+            ]
+
+            w_f_reference_changed[0] = True  # flow control variable
+            _comp_value = list(w_fields_comparison.value)
+
+            if change['new'] in w_fields_comparison.value:
+                _comp_value.pop(_comp_value.index(change['new']))
+                if not _comp_value:
+                    _comp_value = [_fields_comparison[0]]
+
+            w_fields_comparison.options = _fields_comparison
+            w_fields_comparison.value = _comp_value
+
             display_data(
                 change['new'],
                 w_fields_comparison.value,
                 w_bins.value
             )
+
+            w_f_reference_changed[0] = False  # flow control variable
+
         w_field_reference.observe(w_f_reference_change, 'value')
+
+        def w_f_comparison_change(change: dict):
+            """
+
+            :param change:
+            :return:
+            """
+            if not w_f_reference_changed[0]:  # flow control variable
+                display_data(
+                    w_field_reference.value,
+                    change['new'],
+                    w_bins.value
+                )
+        w_fields_comparison.observe(w_f_comparison_change, 'value')
 
         display(
             w_field_reference,
             w_fields_comparison,
-            w_bins
+            w_bins,
+            accordion
         )
 
         display_data(

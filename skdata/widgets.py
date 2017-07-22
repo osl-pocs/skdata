@@ -3,7 +3,7 @@ from ipywidgets import widgets, interactive, IntSlider
 from matplotlib import pyplot as plt
 
 # locals from import
-from .utils import cross_fields, make_chart
+from .utils import cross_fields, plot2html
 from .data import SkData
 
 import numpy as np
@@ -46,29 +46,24 @@ class SkDataWidget:
         if fields_comparison is None:
             fields_comparison = [all_fields[1]]
 
+        # display ids
+        display_table_id = 'table_id_%s' % np.random.randint(10000)
+        display_chart_id = 'chart_id_%s' % np.random.randint(10000)
+
         # layout widgets
-        out_data = widgets.Output()
-        out_chart = widgets.Output()
+        w_out_data = widgets.Output()
+        w_out_chart = widgets.Output()
 
-        accordion = widgets.Accordion(
-            children=[out_data, out_chart]
+        w_accordion = widgets.Accordion(
+            children=[w_out_data, w_out_chart]
         )
-        accordion.set_title(0, 'Data')
-        accordion.set_title(1, 'Chart')
-
-        # data panel
-        with accordion.children[0]:
-            display_table_id = 'table_id_%s' % np.random.randint(10000)
-            display('', display_id=display_table_id)
-
-        # chart panel
-        ax = [None]
-        with accordion.children[1]:
-            ax[0] = plt.figure().gca()
-            plt.show()
 
         # bins widget
-        w_bins = IntSlider(min=2, max=10, value=2, continuous_update=False)
+        w_bins = IntSlider(
+            description='Bins:',
+            min=2, max=10, value=2,
+            continuous_update=False
+        )
 
         # fields comparison widget
         w_fields_comparison = widgets.SelectMultiple(
@@ -85,6 +80,12 @@ class SkDataWidget:
             options=all_fields,
             value=field_reference
         )
+
+        w_box_filter_panel = widgets.HBox([
+            w_field_reference,
+            w_fields_comparison,
+            w_bins
+        ])
 
         # display data and chart
         def display_data(
@@ -106,14 +107,17 @@ class SkDataWidget:
             )
 
             # display data table
-            with accordion.children[0]:
+            with w_accordion.children[0]:
                 update_display(_data, display_id=display_table_id)
 
             # display chart
-            with accordion.children[1]:
-                # clear chart plot
-                ax[0].cla()
-                make_chart(data=_data, ax=ax[0])
+            with w_accordion.children[1]:
+                plot2html(
+                    _data, display_id=display_chart_id,
+                    kind='bar',
+                    stacked=True,
+                    title='Titanic'
+                )
 
             # disable slider bins if no fields are numerical
             _fields = [_field_reference] + list(_fields_comparison)
@@ -136,7 +140,6 @@ class SkDataWidget:
                 w_fields_comparison.value,
                 change['new']
             )
-        w_bins.observe(w_bins_change, 'value')
 
         def w_f_reference_change(change: dict):
             """
@@ -169,8 +172,6 @@ class SkDataWidget:
 
             w_f_reference_changed[0] = False  # flow control variable
 
-        w_field_reference.observe(w_f_reference_change, 'value')
-
         def w_f_comparison_change(change: dict):
             """
 
@@ -183,15 +184,28 @@ class SkDataWidget:
                     change['new'],
                     w_bins.value
                 )
+
+        # change accordion settings
+        w_accordion.set_title(0, 'Data')
+        w_accordion.set_title(1, 'Chart')
+
+        # data panel
+        with w_accordion.children[0]:
+            display('', display_id=display_table_id)
+
+        # chart panel
+        with w_accordion.children[1]:
+            display('', display_id=display_chart_id)
+
+        # create observe callbacks
+        w_bins.observe(w_bins_change, 'value')
+        w_field_reference.observe(w_f_reference_change, 'value')
         w_fields_comparison.observe(w_f_comparison_change, 'value')
 
-        display(
-            w_field_reference,
-            w_fields_comparison,
-            w_bins,
-            accordion
-        )
+        # display widgets
+        display(w_box_filter_panel, w_accordion)
 
+        # display data table and chart
         display_data(
             w_field_reference.value,
             w_fields_comparison.value,

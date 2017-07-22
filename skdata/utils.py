@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-from IPython.display import display
+from IPython.display import display, HTML, update_display
 from matplotlib import pyplot as plt
 
+import base64
+import io
 import numpy as np
 import pandas as pd
 import textwrap
@@ -10,7 +12,7 @@ import traceback
 
 def summary(data: pd.DataFrame):
     """
-    
+
     """
     # types
     df = pd.DataFrame(data.dtypes).rename(columns={0: 'Types'})
@@ -47,25 +49,6 @@ def summary(data: pd.DataFrame):
     return df
 
 
-def make_chart(data: pd.DataFrame, ax: plt.Axes):
-    """
-    Ex:
-    k = ['Sex', 'Survived']
-    df[k].groupby(by='Sex').sum()
-
-    """
-    try:
-        data.plot.bar(ax=ax, stacked=True)
-
-        plt.grid(True)
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-    except:
-        t = '<br/>'.join(textwrap.wrap(traceback.format_exc(), 80))
-        display(t)
-    return ax
-
-
 def cross_fields(
     data: pd.DataFrame,
     field_reference: str,
@@ -94,3 +77,30 @@ def cross_fields(
         _data[field_reference]
     )
 
+
+def plot2html(df: pd.DataFrame, display_id, **kwargs) -> [plt.figure]:
+    """
+    fields name from db
+
+    :param df:
+    :param kwargs:
+    :return:
+    """
+    ax = plt.figure().gca()
+
+    df.plot(ax=ax, legend=True, **kwargs)
+
+    with io.BytesIO() as f:
+        plt.grid(True)
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+
+        plt.savefig(f)
+        f.seek(0)
+        img = base64.b64encode(f.getvalue()).decode('utf8')
+    plt.close()
+
+    update_display(
+        HTML('<img src="data:image/png;base64,%s">' % img),
+        display_id=display_id
+    )

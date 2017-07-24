@@ -76,22 +76,66 @@ def cross_fields(
     )
 
 
-def plot2html(df: pd.DataFrame, display_id, **kwargs) -> [plt.figure]:
+def plot2html(data: pd.DataFrame, display_id, **kwargs) -> [plt.figure]:
     """
-    fields name from db
 
-    :param df:
+    :param data:
+    :param display_id:
     :param kwargs:
     :return:
     """
     with io.BytesIO() as f:
         if 'field_reference' in kwargs:  # multi chart
-            axs = plt.figure().subplot()
+            field_reference = kwargs['field_reference']
+            fields_comparison = kwargs['fields_comparison']
+            bins = kwargs['bins']
 
+            del kwargs['field_reference']
+            del kwargs['fields_comparison']
+            del kwargs['bins']
+
+            k = len(fields_comparison)
+            cols = 4
+            rows = int(np.ceil(k / cols))
+
+            if k < cols:
+                rows = 1
+                cols = k
+
+            if k == 1:
+                fig, ax = plt.subplots()
+                axes = [ax]
+            else:
+                fig, axes = plt.subplots(rows, cols)
+
+            for i, fc in enumerate(fields_comparison):
+                # chart settings
+
+                row = i // cols
+                col = i - row * cols
+
+                j = (row, col) if row > 1 else col
+
+                ax = axes[j]
+
+                # create a cross tab
+                _data = cross_fields(
+                    data=data,
+                    field_reference=field_reference,
+                    fields_comparison=[fc],
+                    bins=bins
+                )
+
+                _data.plot(ax=ax, legend=True, **kwargs)
+
+                ax.grid(True)
+
+                for tick in ax.get_xticklabels():
+                    tick.set_rotation(45)
         else:
             ax = plt.figure().gca()
 
-            df.plot(ax=ax, legend=True, **kwargs)
+            data.plot(ax=ax, legend=True, **kwargs)
 
             ax.grid(True)
 
@@ -104,7 +148,10 @@ def plot2html(df: pd.DataFrame, display_id, **kwargs) -> [plt.figure]:
         f.seek(0)
         img = base64.b64encode(f.getvalue()).decode('utf8')
 
-        plt.close()
+        try:
+            plt.close()
+        except:
+            pass
 
     update_display(
         HTML('<img src="data:image/png;base64,%s">' % img),

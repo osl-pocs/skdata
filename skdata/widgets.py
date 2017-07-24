@@ -57,7 +57,7 @@ class SkDataWidget:
         # chart type widget
         w_chart_type = widgets.RadioButtons(
             options=['individual', 'grouped'],
-            value='grouped',
+            value='individual',
             description='Chart Type:'
         )
 
@@ -111,7 +111,7 @@ class SkDataWidget:
             :param _field_reference:
             :param _fields_comparison:
             :param _bins:
-            :param chart_type:
+            :param _chart_type:
             :return:
             """
             _chart_param = {}
@@ -125,16 +125,18 @@ class SkDataWidget:
                     bins=_bins
                 )
             else:
-                _data = self.skd.data,
+                _data = self.get_data()
                 _chart_param.update(dict(
                     field_reference=_field_reference,
                     fields_comparison=_fields_comparison,
+                    bins=_bins
                 ))
 
             # display chart
             with w_accordion.children[1].children[1]:
                 plot2html(
-                    _data, display_id=display_chart_id,
+                    data=_data,
+                    display_id=display_chart_id,
                     kind='bar',
                     title='Titanic',
                     stacked=True,

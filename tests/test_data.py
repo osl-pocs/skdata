@@ -4,9 +4,8 @@ test_skdata
 
 Tests for `skdata` module.
 """
-# from contextlib import contextmanager
 # local
-from skdata import utils
+from skdata.data import cross_fields
 
 import os
 import pandas as pd
@@ -14,7 +13,7 @@ import sys
 import unittest
 
 
-class TestUtils(unittest.TestCase):
+class TestData(unittest.TestCase):
     data = None
 
     def setUp(self):
@@ -26,11 +25,8 @@ class TestUtils(unittest.TestCase):
         pass
 
     def test_000_cross_fields(self):
-        data = utils.cross_fields(
-            data=self.data,
-            field_reference='Survived',
-            fields_comparison=['Sex'],
-            bins=None
+        data = cross_fields(
+            data=self.data, y='Survived', xs=['Sex'], bins=None
         )
 
         died = 0

@@ -22,9 +22,18 @@ test_requirements = [
     # TODO: put package test requirements here
 ]
 
+def get_version():
+    """Obtain the version number"""
+    import imp
+    import os
+    mod = imp.load_source(
+        'version', os.path.join('skdata', '__init__.py')
+    )
+    return mod.__version__
+
 setup(
     name='scikit-data',
-    version='0.1.0',
+    version=get_version(),
     description="The propose of this library is to allow the data analysis process more easy and automatic.",
     long_description=readme + '\n\n' + history,
     author="Ivan Ogasawara",

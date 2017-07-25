@@ -1,7 +1,8 @@
 # local from import
-from . import cleaning, utils
+from . import cleaning
 
 import pandas as pd
+import numpy as np
 
 
 class SkData:
@@ -15,7 +16,7 @@ class SkData:
     categories = {}
     target = None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> pd.DataFrame:
         return self.data
 
     def __init__(
@@ -86,9 +87,79 @@ class SkData:
             )
             # TODO: Add log information
 
-    def summary(self):
+    def summary(self) -> pd.DataFrame:
         """
 
         :return:
         """
-        return utils.summary(self.data)
+        return summary(self.data)
+
+
+def summary(data: pd.DataFrame) -> pd.DataFrame:
+    """
+
+    :param data:
+    :return:
+    """
+    # types
+    df = pd.DataFrame(data.dtypes).rename(columns={0: 'Types'})
+
+    # set
+    df = pd.merge(
+        df, pd.DataFrame(
+            data.apply(lambda se: str(sorted(set(se.dropna())))[:1000])
+        ).rename(columns={0: 'Set Values'}),
+        left_index=True, right_index=True
+    )
+
+    # count set
+    df = pd.merge(
+        df, pd.DataFrame(
+            data.apply(lambda se: se.dropna().unique().shape[0])
+        ).rename(columns={0: 'Count Set'}),
+        left_index=True, right_index=True
+    )
+
+    # total observations
+    df = pd.merge(
+        df, pd.DataFrame(
+            data.count()
+        ).rename(columns={0: '# Observations'}),
+        left_index=True, right_index=True
+    )
+
+    # total of nan
+    df = pd.merge(
+        df, pd.DataFrame(data.isnull().sum()).rename(columns={0: '# NaN'}),
+        left_index=True, right_index=True
+    )
+    return df
+
+
+def cross_fields(
+    data: pd.DataFrame,
+    y: str,
+    xs: [str],
+    bins: int
+) -> pd.DataFrame:
+    """
+
+    :param data:
+    :param y:
+    :param xs:
+    :param bins:
+    :return:
+    """
+    if not (xs and y):
+        return data
+
+    d = data[list(xs)+[y]].copy()
+    for x in list(xs)+[y]:
+        try:
+            # if the data is not a number type() will raise an exception
+            if isinstance(data[x].dtype.type(), np.number):
+                d[x], _ = pd.cut(data[x].copy(), bins=bins, retbins=True)
+        except:
+            pass
+
+    return pd.crosstab([d[f] for f in xs], d[y])

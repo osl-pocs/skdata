@@ -1,291 +1,373 @@
+from abc import ABCMeta, abstractmethod
 from IPython.display import display, update_display
-from ipywidgets import widgets, interactive, IntSlider
-from matplotlib import pyplot as plt
+from ipywidgets import widgets, IntSlider
 
 # locals from import
-from .utils import cross_fields, plot2html
+from .utils import plot2html
+from .data import cross_fields
 from .data import SkData
 
 import numpy as np
+import pandas as pd
 
 
 class SkDataWidget:
     """
 
     """
+    layout = {}
+    controllers = {}
+
     def __call__(self, *args, **kwargs):
         # show dashboard
-        return self.show_chart(*args, **kwargs)
+        return self.display(*args, **kwargs)
 
     def __init__(
-        self, skd: SkData
+        self, skd: SkData, settings: dict={}
     ):
         """
 
         :param skd:
+        :param settings: dictionary
         """
+        self.settings = settings
         self.skd = skd
 
-    def get_data(self):
-        return self.skd()
+        # settings
+        if 'title' not in self.settings:
+            self.settings['title'] = 'Data Analysis'
 
-    def show_chart(
-        self, field_reference: str=None, fields_comparison: [str]=None
-    ):
+        chart_settings = self.settings.pop('chart', {})
+        table_settings = self.settings.pop('table', {})
+
+        self.register_controller(
+            chart=SkDataChartController(self, chart_settings)
+        )
+        self.register_controller(
+            table=SkDataTableController(self, table_settings)
+        )
+
+
+    def _(self, name: str):
+        """
+        Return layout object
+
+        :param name:
+        :return:
+        """
+        return self.layout[name]
+
+    def _display_result(self, **kwargs):
         """
 
-        :param field_reference:
-        :param fields_comparison:
+        :param kwargs: kwargs could receive these parameters:
+            y, xs, bins, chart_type
         :return:
+        """
+        # get controller
+        chart = self.controllers['chart']
+        table = self.controllers['table']
 
+        # widget value is the default value
+        y = kwargs.pop('y', self._('y').value)
+        xs = kwargs.pop('xs', self._('xs').value)
+        bins = kwargs.pop('bins', self._('bins').value)
+        chart_type = kwargs.pop('chart_type', self._('chart_type').value)
+
+        table.display(
+            y=y,
+            xs=xs,
+            bins=bins,
+            display_id=self.settings['display_chart_id']
+        )
+
+        chart.display(
+            y=y,
+            xs=xs,
+            bins=bins,
+            chart_type=chart_type,
+            display_id=self.settings['display_chart_id']
+        )
+
+        # disable slider bins if no fields are numerical
+        fields = [y] + list(xs)
+        dtypes = self.skd.data[fields].dtypes.values
+        visibility = {True: 'visible', False: 'hidden'}
+
+        self._('bins').layout.visibility = visibility[
+            float in dtypes or int in dtypes
+        ]
+
+    def get_data(self) -> pd.DataFrame:
+        """
+
+        :return:
+        """
+        return self.skd.data
+
+    def build_layout(self):
+        """
+
+        :return:
         """
         all_fields = list(self.skd().keys())
 
-        if field_reference is None:
-            if self.skd.target is None:
-                field_reference = all_fields[0]
-            else:
-                field_reference = self.skd.target.name
+        if self.skd.target is None:
+            field_reference = all_fields[0]
+        else:
+            field_reference = self.skd.target.name
 
-        if fields_comparison is None:
-            fields_comparison = [all_fields[1]]
+        fields_comparison = [all_fields[1]]
 
         # display ids
-        display_table_id = 'table_id_%s' % np.random.randint(10000)
-        display_chart_id = 'chart_id_%s' % np.random.randint(10000)
+        self.settings['display_table_id'] = (
+            'table_id_%s' % np.random.randint(10000)
+        )
+        self.settings['display_chart_id'] = (
+            'chart_id_%s' % np.random.randint(10000)
+        )
 
         # chart type widget
-        w_chart_type = widgets.RadioButtons(
-            options=['individual', 'grouped'],
-            value='individual',
-            description='Chart Type:'
+        self.register_widget(
+            chart_type=widgets.RadioButtons(
+                options=['individual', 'grouped'],
+                value='individual',
+                description='Chart Type:'
+            )
         )
 
         # bins widget
-        w_bins = IntSlider(
-            description='Bins:',
-            min=2, max=10, value=2,
-            continuous_update=False
+        self.register_widget(
+            bins=IntSlider(
+                description='Bins:',
+                min=2, max=10, value=2,
+                continuous_update=False
+            )
         )
 
         # fields comparison widget
-        w_fields_comparison = widgets.SelectMultiple(
-            description='Xs:',
-            options=[f for f in all_fields if not f == field_reference],
-            value=fields_comparison
+        self.register_widget(
+            xs=widgets.SelectMultiple(
+                description='Xs:',
+                options=[f for f in all_fields if not f == field_reference],
+                value=fields_comparison
+            )
         )
-        # used to internal flow control
-        w_f_reference_changed = [False]
 
         # field reference widget
-        w_field_reference = widgets.Dropdown(
-            description='Y:',
-            options=all_fields,
-            value=field_reference
+        self.register_widget(
+            y=widgets.Dropdown(
+                description='Y:',
+                options=all_fields,
+                value=field_reference
+            )
         )
+        # used to internal flow control
+        y_changed = [False]
 
-        w_box_filter_panel = widgets.HBox([
-            w_field_reference,
-            w_fields_comparison,
-            w_bins
-        ])
+        self.register_widget(
+            box_filter_panel=widgets.HBox([
+                self._('y'), self._('xs'), self._('bins')
+            ])
+        )
 
         # layout widgets
-        w_out_data = widgets.Output()
-        w_out_chart = widgets.Output()
-
-        w_vbox_chart = widgets.VBox([w_chart_type, w_out_chart])
-
-        w_accordion = widgets.Accordion(
-            children=[w_out_data, w_vbox_chart]
+        self.register_widget(
+            table=widgets.Output(),
+            chart=widgets.Output()
         )
 
-        def plot_chart(
-            _field_reference: str,
-            _fields_comparison: list,
-            _bins: int,
-            _chart_type: str
-        ):
-            """
+        self.register_widget(vbox_chart=widgets.VBox([
+            self._('chart_type'), self._('chart')
+        ]))
 
-            :param _field_reference:
-            :param _fields_comparison:
-            :param _bins:
-            :param _chart_type:
-            :return:
-            """
-            _chart_param = {}
-
-            if _chart_type == 'grouped':
-                # create a cross tab
-                _data = cross_fields(
-                    data=self.skd.data,
-                    field_reference=_field_reference,
-                    fields_comparison=_fields_comparison,
-                    bins=_bins
-                )
-            else:
-                _data = self.get_data()
-                _chart_param.update(dict(
-                    field_reference=_field_reference,
-                    fields_comparison=_fields_comparison,
-                    bins=_bins
-                ))
-
-            # display chart
-            with w_accordion.children[1].children[1]:
-                plot2html(
-                    data=_data,
-                    display_id=display_chart_id,
-                    kind='bar',
-                    title='Titanic',
-                    stacked=True,
-                    **_chart_param
-                )
-
-        # display data and chart
-        def display_data(
-            _field_reference: str, _fields_comparison: list or tuple,
-            _bins: int, _chart_type: str
-        ):
-            """
-
-            :param _field_reference:
-            :param _fields_comparison:
-            :param _bins:
-            :param _chart_type:
-            :return:
-            """
-            # create a cross tab
-            _data = cross_fields(
-                data=self.skd.data,
-                field_reference=_field_reference,
-                fields_comparison=_fields_comparison,
-                bins=_bins
+        self.register_widget(
+            accordion=widgets.Accordion(
+                children=[self._('table'), self._('vbox_chart')]
             )
-
-            # display data table
-            with w_accordion.children[0]:
-                update_display(_data, display_id=display_table_id)
-
-            # display chart
-            plot_chart(
-                _field_reference,
-                _fields_comparison,
-                _bins,
-                _chart_type
-            )
-
-            # disable slider bins if no fields are numerical
-            _fields = [_field_reference] + list(_fields_comparison)
-            _dtypes = self.skd.data[_fields].dtypes.values
-            _visibility = {True: 'visible', False: 'hidden'}
-
-            w_bins.layout.visibility = _visibility[
-                float in _dtypes or int in _dtypes
-            ]
-
-        def w_chart_type_change(change: dict):
-            """
-
-            :param change:
-            :return:
-            """
-            plot_chart(
-                w_field_reference.value,
-                w_fields_comparison.value,
-                w_bins.value,
-                change['new']
-            )
+        )
 
         # observe hooks
-        def w_bins_change(change: dict):
+        def w_y_change(change: dict):
             """
-
-            :param change:
-            :return:
-            """
-            display_data(
-                w_field_reference.value,
-                w_fields_comparison.value,
-                change['new'],
-                w_chart_type.value
-            )
-
-        def w_f_reference_change(change: dict):
-            """
+            When y field was changed xs field should be updated and data table
+            and chart should be displayed/updated.
 
             :param change:
             :return:
             """
             # remove reference field from the comparison field list
-            _fields_comparison = [
+            _xs = [
                 f for f in all_fields
                 if not f == change['new']
             ]
 
-            w_f_reference_changed[0] = True  # flow control variable
-            _comp_value = list(w_fields_comparison.value)
+            y_changed[0] = True  # flow control variable
+            _xs_value = list(self._('xs').value)
 
-            if change['new'] in w_fields_comparison.value:
-                _comp_value.pop(_comp_value.index(change['new']))
-                if not _comp_value:
-                    _comp_value = [_fields_comparison[0]]
+            if change['new'] in self._('xs').value:
+                _xs_value.pop(_xs_value.index(change['new']))
+                if not _xs_value:
+                    _xs_value = [_xs[0]]
 
-            w_fields_comparison.options = _fields_comparison
-            w_fields_comparison.value = _comp_value
+            self._('xs').options = _xs
+            self._('xs').value = _xs_value
 
-            display_data(
-                change['new'],
-                w_fields_comparison.value,
-                w_bins.value,
-                w_chart_type.value
-            )
+            self._display_result(y=change['new'])
 
-            w_f_reference_changed[0] = False  # flow control variable
+            y_changed[0] = False  # flow control variable
 
-        def w_f_comparison_change(change: dict):
-            """
-
-            :param change:
-            :return:
-            """
-            if not w_f_reference_changed[0]:  # flow control variable
-                display_data(
-                    w_field_reference.value,
-                    change['new'],
-                    w_bins.value,
-                    w_chart_type.value
-                )
+        # widgets registration
 
         # change accordion settings
-        w_accordion.set_title(0, 'Data')
-        w_accordion.set_title(1, 'Chart')
+        self._('accordion').set_title(0, 'Data')
+        self._('accordion').set_title(1, 'Chart')
 
         # data panel
-        with w_accordion.children[0]:
-            display('', display_id=display_table_id)
+        with self._('accordion').children[0]:
+            display('', display_id=self.settings['display_table_id'])
 
         # chart panel
-        with w_accordion.children[1].children[1]:
-            display('', display_id=display_chart_id)
+        with self._('accordion').children[1].children[1]:
+            display('', display_id=self.settings['display_chart_id'])
 
         # create observe callbacks
-        w_bins.observe(w_bins_change, 'value')
-        w_field_reference.observe(w_f_reference_change, 'value')
-        w_fields_comparison.observe(w_f_comparison_change, 'value')
-        w_chart_type.observe(w_chart_type_change, 'value')
+        self._('bins').observe(
+            lambda change: self._display_result(bins=change['new']),
+            'value'
+        )
+        self._('y').observe(w_y_change, 'value')
+        # execute display result if 'y' was not changing.
+        self._('xs').observe(
+            lambda change: self._display_result(xs=change['new'])
+                if not y_changed[0] else None,
+            'value'
+        )
+        self._('chart_type').observe(
+            lambda change: self._display_result(chart_type=change['new']),
+            'value'
+        )
+
+    def display(self):
+        """
+
+        :return:
+
+        """
+        # build layout
+        self.build_layout()
 
         # display widgets
-        display(w_box_filter_panel, w_accordion)
+        display(self._('box_filter_panel'), self._('accordion'))
 
         # display data table and chart
-        display_data(
-            w_field_reference.value,
-            w_fields_comparison.value,
-            w_bins.value,
-            w_chart_type.value,
-        )
+        self._display_result()
+
+    def register_controller(self, **kwargs):
+        """
+        This method should receive objects as SkDataController instance.
+
+        :return:
+        """
+        self.controllers.update(kwargs)
+
+    def register_widget(self, **kwargs):
+        """
+        This method should receive objects as ipywidgets.Widgets instance
+
+        :return:
+        """
+        self.layout.update(kwargs)
 
     def __repr__(self):
         return ''
+
+
+class SkDataController:
+    __metaclass__ = ABCMeta
+
+    def __init__(self, parent, settings: dict={}):
+        self.parent = parent
+        self.settings = settings
+
+    @abstractmethod
+    def display(self):
+        """
+        This method should be overwritten.
+        :return:
+        """
+        pass
+
+
+class SkDataChartController(SkDataController):
+    def __init__(self, parent, settings: dict={}):
+        super(self.__class__, self).__init__(parent, settings)
+
+        # default settings
+        if 'sharey' not in self.settings:
+            self.settings.update({'sharey': True})
+
+    def display(
+        self,
+        y: str,  # field_reference
+        xs: list,  # fields_comparison
+        bins: int,
+        chart_type: str,
+        display_id: str
+    ):
+        """
+
+        :param y:
+        :param xs:
+        :param bins:
+        :param chart_type:
+        :param display_id:
+        :return:
+        """
+        chart_param = self.settings
+        w_chart = self.parent.layout['chart']
+
+        if chart_type == 'grouped':
+            # create a cross tab
+            d = cross_fields(
+                data=self.parent.get_data(),
+                y=y, xs=xs, bins=bins
+            )
+        else:
+            d = self.parent.get_data()
+            chart_param.update(dict(
+                y=y, xs=xs, bins=bins
+            ))
+
+        # display chart
+        with w_chart:
+            plot2html(
+                data=d,
+                display_id=self.parent.settings['display_chart_id'],
+                title=self.parent.settings['title'],
+                **chart_param
+            )
+
+
+class SkDataTableController(SkDataController):
+    # display data and chart
+    def display(
+        self, y: str, xs: list or tuple, bins: int, display_id: str
+    ):
+        """
+
+        :param xs:
+        :param bins:
+        :param chart_type:
+        :param display_id:
+        :return:
+        """
+        w_table = self.parent.layout['table']
+        # create a cross tab
+        d = cross_fields(data=self.parent.get_data(), y=y, xs=xs, bins=bins)
+
+        # display data table
+        with w_table:
+            update_display(
+                d, display_id=self.parent.settings['display_table_id']
+            )

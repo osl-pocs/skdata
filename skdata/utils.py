@@ -1,6 +1,7 @@
-# -*- coding: utf-8 -*-
-from IPython.display import display, HTML, update_display
+from IPython.display import HTML, update_display
 from matplotlib import pyplot as plt
+# from local import
+from .data import cross_fields
 
 import base64
 import io
@@ -8,75 +9,10 @@ import numpy as np
 import pandas as pd
 
 
-def summary(data: pd.DataFrame):
-    """
-
-    """
-    # types
-    df = pd.DataFrame(data.dtypes).rename(columns={0: 'Types'})
-
-    # set
-    df = pd.merge(
-        df, pd.DataFrame(
-            data.apply(lambda se: str(sorted(set(se.dropna())))[:1000])
-        ).rename(columns={0: 'Set Values'}),
-        left_index=True, right_index=True
-    )
-
-    # count set
-    df = pd.merge(
-        df, pd.DataFrame(
-            data.apply(lambda se: se.dropna().unique().shape[0])
-        ).rename(columns={0: 'Count Set'}),
-        left_index=True, right_index=True
-    )
-
-    # total observations
-    df = pd.merge(
-        df, pd.DataFrame(
-            data.count()
-        ).rename(columns={0: '# Observations'}),
-        left_index=True, right_index=True
-    )
-
-    # total of nan
-    df = pd.merge(
-        df, pd.DataFrame(data.isnull().sum()).rename(columns={0: '# NaN'}),
-        left_index=True, right_index=True
-    )
-    return df
-
-
-def cross_fields(
-    data: pd.DataFrame,
-    field_reference: str,
-    fields_comparison: [str],
-    bins: int
-) -> pd.DataFrame:
-    """
-
-    """
-    labels_reference = []
-    labels = []
-
-    if not (fields_comparison and field_reference):
-        return data
-
-    _data = data[list(fields_comparison)+[field_reference]].copy()
-    for f in list(fields_comparison)+[field_reference]:
-        try:
-            if isinstance(data[f].dtype.type(), np.number):
-                _data[f], _ = pd.cut(data[f].copy(), bins=bins, retbins=True)
-        except:
-            pass
-
-    return pd.crosstab(
-        [_data[f] for f in fields_comparison],
-        _data[field_reference]
-    )
-
-
-def plot2html(data: pd.DataFrame, display_id, **kwargs) -> [plt.figure]:
+def plot2html(
+    data: pd.DataFrame, display_id: str, title: str='Data Analysis',
+    **kwargs
+) -> [plt.figure]:
     """
 
     :param data:
@@ -85,16 +21,17 @@ def plot2html(data: pd.DataFrame, display_id, **kwargs) -> [plt.figure]:
     :return:
     """
     with io.BytesIO() as f:
-        if 'field_reference' in kwargs:  # multi chart
-            field_reference = kwargs['field_reference']
-            fields_comparison = kwargs['fields_comparison']
-            bins = kwargs['bins']
+        if 'y' in kwargs:  # multi chart
+            # chart with individual data
+            y = kwargs['y']  # required
+            xs = kwargs['xs']  # required
+            bins = kwargs['bins']  # required
 
-            del kwargs['field_reference']
-            del kwargs['fields_comparison']
+            del kwargs['y']
+            del kwargs['xs']
             del kwargs['bins']
 
-            k = len(fields_comparison)
+            k = len(xs)
             cols = 4
             rows = int(np.ceil(k / cols))
 
@@ -102,39 +39,37 @@ def plot2html(data: pd.DataFrame, display_id, **kwargs) -> [plt.figure]:
                 rows = 1
                 cols = k
 
-            if k == 1:
-                fig, ax = plt.subplots()
-                axes = [ax]
-            else:
-                fig, axes = plt.subplots(rows, cols)
+            fig, axes = plt.subplots(
+                nrows=rows, ncols=cols, squeeze=False,
+                figsize=(10, rows*5), **kwargs
+            )
+            fig.suptitle(title, fontsize=18)
 
-            for i, fc in enumerate(fields_comparison):
+            for i, fc in enumerate(xs):
                 # chart settings
 
-                row = i // cols
-                col = i - row * cols
-
-                j = (row, col) if row > 1 else col
-
-                ax = axes[j]
+                ax = axes.flat[i]
 
                 # create a cross tab
                 _data = cross_fields(
                     data=data,
-                    field_reference=field_reference,
-                    fields_comparison=[fc],
+                    y=y,
+                    xs=[fc],
                     bins=bins
                 )
 
-                _data.plot(ax=ax, legend=True, **kwargs)
+                _data.plot(
+                    ax=ax, legend=True, kind='bar', stacked=True,
+                    title='%s x %s' % (y, fc), **kwargs
+                )
 
                 ax.grid(True)
 
                 for tick in ax.get_xticklabels():
                     tick.set_rotation(45)
         else:
+            # chart with grouped data
             ax = plt.figure().gca()
-
             data.plot(ax=ax, legend=True, **kwargs)
 
             ax.grid(True)
@@ -142,7 +77,8 @@ def plot2html(data: pd.DataFrame, display_id, **kwargs) -> [plt.figure]:
             for tick in ax.get_xticklabels():
                 tick.set_rotation(45)
 
-        plt.tight_layout()
+        plt.tight_layout(h_pad=3)
+        plt.subplots_adjust(top=0.89)
         plt.savefig(f)
 
         f.seek(0)

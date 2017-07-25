@@ -1,96 +1,95 @@
-# -*- coding: utf-8 -*-
-from IPython.display import display
+from IPython.display import HTML, update_display
 from matplotlib import pyplot as plt
+# from local import
+from .data import cross_fields
 
+import base64
+import io
 import numpy as np
 import pandas as pd
-import textwrap
-import traceback
 
 
-def summary(data: pd.DataFrame):
-    """
-    
-    """
-    # types
-    df = pd.DataFrame(data.dtypes).rename(columns={0: 'Types'})
-
-    # set
-    df = pd.merge(
-        df, pd.DataFrame(
-            data.apply(lambda se: str(sorted(set(se.dropna())))[:1000])
-        ).rename(columns={0: 'Set Values'}),
-        left_index=True, right_index=True
-    )
-
-    # count set
-    df = pd.merge(
-        df, pd.DataFrame(
-            data.apply(lambda se: se.dropna().unique().shape[0])
-        ).rename(columns={0: 'Count Set'}),
-        left_index=True, right_index=True
-    )
-
-    # total observations
-    df = pd.merge(
-        df, pd.DataFrame(
-            data.count()
-        ).rename(columns={0: '# Observations'}),
-        left_index=True, right_index=True
-    )
-
-    # total of nan
-    df = pd.merge(
-        df, pd.DataFrame(data.isnull().sum()).rename(columns={0: '# NaN'}),
-        left_index=True, right_index=True
-    )
-    return df
-
-
-def make_chart(data: pd.DataFrame, ax: plt.Axes):
-    """
-    Ex:
-    k = ['Sex', 'Survived']
-    df[k].groupby(by='Sex').sum()
-
-    """
-    try:
-        data.plot.bar(ax=ax, stacked=True)
-
-        plt.grid(True)
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-    except:
-        t = '<br/>'.join(textwrap.wrap(traceback.format_exc(), 80))
-        display(t)
-    return ax
-
-
-def cross_fields(
-    data: pd.DataFrame,
-    field_reference: str,
-    fields_comparison: [str],
-    bins: int
-) -> pd.DataFrame:
+def plot2html(
+    data: pd.DataFrame, display_id: str, title: str='Data Analysis',
+    **kwargs
+) -> [plt.figure]:
     """
 
+    :param data:
+    :param display_id:
+    :param kwargs:
+    :return:
     """
-    labels_reference = []
-    labels = []
+    with io.BytesIO() as f:
+        if 'y' in kwargs:  # multi chart
+            # chart with individual data
+            y = kwargs['y']  # required
+            xs = kwargs['xs']  # required
+            bins = kwargs['bins']  # required
 
-    if not (fields_comparison and field_reference):
-        return data
+            del kwargs['y']
+            del kwargs['xs']
+            del kwargs['bins']
 
-    _data = data[list(fields_comparison)+[field_reference]].copy()
-    for f in list(fields_comparison)+[field_reference]:
+            k = len(xs)
+            cols = 4
+            rows = int(np.ceil(k / cols))
+
+            if k < cols:
+                rows = 1
+                cols = k
+
+            fig, axes = plt.subplots(
+                nrows=rows, ncols=cols, squeeze=False,
+                figsize=(10, rows*5), **kwargs
+            )
+            fig.suptitle(title, fontsize=18)
+
+            for i, fc in enumerate(xs):
+                # chart settings
+
+                ax = axes.flat[i]
+
+                # create a cross tab
+                _data = cross_fields(
+                    data=data,
+                    y=y,
+                    xs=[fc],
+                    bins=bins
+                )
+
+                _data.plot(
+                    ax=ax, legend=True, kind='bar', stacked=True,
+                    title='%s x %s' % (y, fc), **kwargs
+                )
+
+                ax.grid(True)
+
+                for tick in ax.get_xticklabels():
+                    tick.set_rotation(45)
+        else:
+            # chart with grouped data
+            ax = plt.figure().gca()
+            data.plot(ax=ax, legend=True, **kwargs)
+
+            ax.grid(True)
+
+            for tick in ax.get_xticklabels():
+                tick.set_rotation(45)
+
+        plt.tight_layout(h_pad=3)
+        plt.subplots_adjust(top=0.89)
+        plt.savefig(f)
+
+        f.seek(0)
+        img = base64.b64encode(f.getvalue()).decode('utf8')
+
         try:
-            if isinstance(data[f].dtype.type(), np.number):
-                _data[f], _ = pd.cut(data[f].copy(), bins=bins, retbins=True)
+            plt.close()
         except:
             pass
 
-    return pd.crosstab(
-        [_data[f] for f in fields_comparison],
-        _data[field_reference]
+    update_display(
+        HTML('<img src="data:image/png;base64,%s">' % img),
+        display_id=display_id
     )
-

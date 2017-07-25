@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+from .data import SkData
 
 __author__ = 'Ivan Ogasawara'
 __email__ = 'ivan.ogasawara@gmail.com'

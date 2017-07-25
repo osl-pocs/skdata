@@ -5,4 +5,3 @@ matplotlib
 jupyter
 ipywidgets
 IPython
-jupyter_nbextensions_configurator

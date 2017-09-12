@@ -5,3 +5,5 @@ matplotlib
 jupyter
 ipywidgets
 IPython
+h5py
+PyTables

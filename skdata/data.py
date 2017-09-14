@@ -32,11 +32,12 @@ class SkData:
         self.load(file_path)
 
     def categorize(
-        self, col_name: str=None, categories: dict = None,
+        self, dset_id: str, col_name: str=None, categories: dict = None,
         max_categories: float=0.15
     ):
         """
 
+        :param dset_id:
         :param col_name:
         :param categories:
         :param max_categories:
@@ -46,7 +47,14 @@ class SkData:
             data=self.data, col_name=col_name, categories=categories,
             max_categories=max_categories
         )
-        self.categories.update(categories)
+        dset = self.data[dset_id]
+
+        _categories = {}
+        if 'categories' in dset.attr:
+            _categories.update(dset.attr['categories'])
+
+        _categories.update(categories)
+        dset.attr['categories'] = _categories
         # TODO: Add log information
 
     def drop_columns(
@@ -110,11 +118,17 @@ class SkData:
 
         dset = self.data.create_dataset(
             dset_id, shape=(data.shape[0],),
-            dtype=dtypes
+            dtype=dtypes, fillvalue=None
         )
 
+        null_string = ''
         for k in data.keys():
+            if data[k].dtype == pd.api.types.pandas_dtype('O'):
+                data[k].fillna(null_string, inplace=True)
+
             dset[k] = data[k]
+
+        dset.attrs['null_string'] = null_string
 
         if target_col is not None:
             dset.attrs['target'] = target_col
@@ -136,9 +150,18 @@ class SkData:
             if k not in [index_col]
         )
 
-        return pd.DataFrame(
+        df = pd.DataFrame(
             dset[keys], index=dset[index_col]
         )
+
+        for k in df.keys():
+            if df[k].dtype == pd.api.types.pandas_dtype('O'):
+                df[k] = df[k].str.decode("utf-8")
+                df[k].replace(
+                    dset.attrs['null_string'], np.nan, inplace=True
+                )
+
+        return df
 
     def load(self, file_path: str):
         self.path = file_path

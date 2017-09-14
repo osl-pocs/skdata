@@ -4,9 +4,10 @@ from datetime import datetime
 from . import cleaning
 
 import h5py
+import numpy as np
 import os
 import pandas as pd
-import numpy as np
+import pickle
 
 
 class SkData:
@@ -17,8 +18,6 @@ class SkData:
     _log = ''
 
     data = None
-    categories = {}
-    target = None
     path = ''
 
     def __call__(self, *args, **kwargs) -> pd.DataFrame:
@@ -43,18 +42,45 @@ class SkData:
         :param max_categories:
         :return:
         """
-        categories = cleaning.categorize(
-            data=self.data, col_name=col_name, categories=categories,
+        dset = self.data[dset_id]
+        _categories = {}
+        _computes = []
+
+        compute = '''
+            lambda _data: (
+                cleaning.categorize(
+                    data=_data, col_name={}, categories={}, max_categories={}
+                )
+            )
+        '''.format(
+            ("'%s'" % col_name if col_name is not None else 'None'),
+            str(categories),
+            max_categories
+        ).strip().replace('\n', '')
+
+        __compute = compute
+        compute = compute.replace('  ', ' ')
+        while not compute == __compute:
+            __compute = compute
+            compute = compute.replace('  ', ' ')
+
+        if 'categories' in dset.attrs:
+            _categories.update(
+                pickle.loads(dset.attrs['categories'])
+            )
+
+        _categories[col_name] = dict(
+            col_name=col_name, categories=categories,
             max_categories=max_categories
         )
-        dset = self.data[dset_id]
 
-        _categories = {}
-        if 'categories' in dset.attr:
-            _categories.update(dset.attr['categories'])
+        if 'computes' in dset.attrs:
+            _computes = pickle.loads(dset.attrs['computes'])
 
-        _categories.update(categories)
-        dset.attr['categories'] = _categories
+        _computes.append(compute)
+
+        dset.attrs['categories'] = pickle.dumps(_categories, protocol=0)
+        dset.attrs['computes'] = pickle.dumps(_computes, protocol=0)
         # TODO: Add log information
 
     def drop_columns(
@@ -140,7 +166,7 @@ class SkData:
 
         self.data.flush()
 
-    def get_data(self, dset_id: str):
+    def compute(self, dset_id: str):
         dset = self.data[dset_id]
 
         index_col = dset.attrs['index']
@@ -160,6 +186,12 @@ class SkData:
                 df[k].replace(
                     dset.attrs['null_string'], np.nan, inplace=True
                 )
+
+        if 'computes' in dset.attrs:
+            computes = pickle.loads(dset.attrs['computes'])
+
+            for compute in computes:
+                eval(compute)(df)
 
         return df
 

@@ -159,39 +159,6 @@ class SkDataSet:
 
         return pickle.loads(dset.attrs[attr])
 
-    def categorize(
-        self, col_name: str = None, categories: dict = None,
-        max_categories: float = 0.15
-    ):
-        """
-
-        :param col_name:
-        :param categories:
-        :param max_categories:
-        :return:
-        """
-        _categories = {}
-        _col_name = ("'%s'" % col_name if col_name is not None else 'None')
-
-        str_compute = '''
-        lambda _data: (
-            cleaning.categorize(
-                data=_data, col_name={}, categories={}, max_categories={}
-            )
-        )
-        '''.format(_col_name, str(categories), max_categories)
-
-        str_compute = str_simplify(str_compute)
-
-        _categories[col_name] = dict(
-            col_name=col_name, categories=categories,
-            max_categories=max_categories
-        )
-
-        self.attr_update(attr='categories', value=_categories)
-        self.attr_update(attr='computes', value=[str_compute])
-        # TODO: Add log information
-
     def compute(self):
         dset = self.parent.data[self.iid]
 
@@ -311,6 +278,40 @@ class SkDataColumn:
     def __init__(self, parent: SkDataSet, column_name: str):
         self.parent = parent
         self.column_name = column_name
+
+    def categorize(
+        self, categories: dict = None, max_categories: float = 0.15
+    ):
+        """
+
+        :param categories:
+        :param max_categories:
+        :return:
+        """
+        _categories = {}
+        _col_name = (
+            "'%s'" % self.column_name if self.column_name is not None else
+            'None'
+        )
+
+        str_compute = '''
+        lambda _data: (
+            cleaning.categorize(
+                data=_data, col_name={}, categories={}, max_categories={}
+            )
+        )
+        '''.format(_col_name, str(categories), max_categories)
+
+        str_compute = str_simplify(str_compute)
+
+        _categories[self.column_name] = dict(
+            col_name=self.column_name, categories=categories,
+            max_categories=max_categories
+        )
+
+        self.parent.attr_update(attr='categories', value=_categories)
+        self.parent.attr_update(attr='computes', value=[str_compute])
+        # TODO: Add log information
 
     def replace(self, dict_map: dict):
         """

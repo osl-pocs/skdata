@@ -14,14 +14,9 @@ class SkData:
     """
 
     """
-    _data = None  # original data
-    _log = ''
-
     data = None
+    sets = {}
     path = ''
-
-    def __call__(self, *args, **kwargs) -> pd.DataFrame:
-        return self.data
 
     def __del__(self):
         self.data.flush()
@@ -30,89 +25,15 @@ class SkData:
     def __init__(self, file_path: str):
         self.load(file_path)
 
-    def categorize(
-        self, dset_id: str, col_name: str=None, categories: dict = None,
-        max_categories: float=0.15
-    ):
-        """
+    def __getitem__(self, item):
+        if item not in self.sets.keys():
+            raise Exception('Item not found.')
 
-        :param dset_id:
-        :param col_name:
-        :param categories:
-        :param max_categories:
-        :return:
-        """
-        dset = self.data[dset_id]
-        _categories = {}
-        _computes = []
-
-        compute = '''
-            lambda _data: (
-                cleaning.categorize(
-                    data=_data, col_name={}, categories={}, max_categories={}
-                )
-            )
-        '''.format(
-            ("'%s'" % col_name if col_name is not None else 'None'),
-            str(categories),
-            max_categories
-        ).strip().replace('\n', '')
-
-        __compute = compute
-        compute = compute.replace('  ', ' ')
-        while not compute == __compute:
-            __compute = compute
-            compute = compute.replace('  ', ' ')
-
-        if 'categories' in dset.attrs:
-            _categories.update(
-                pickle.loads(dset.attrs['categories'])
-            )
-
-        _categories[col_name] = dict(
-            col_name=col_name, categories=categories,
-            max_categories=max_categories
-        )
-
-        if 'computes' in dset.attrs:
-            _computes = pickle.loads(dset.attrs['computes'])
-
-        _computes.append(compute)
-
-        dset.attrs['categories'] = pickle.dumps(_categories, protocol=0)
-        dset.attrs['computes'] = pickle.dumps(_computes, protocol=0)
-        # TODO: Add log information
-
-    def drop_columns(
-        self, max_na_values: int=None, max_unique_values: int=None
-    ):
-        """
-        When max_na_values was informed, remove columns when the proportion of
-        total NA values more than max_na_values threshold.
-
-        When max_unique_values was informed, remove columns when the proportion
-        of the total of unique values is more than the max_unique_values
-        threshold, just for columns with type as object or category.
-
-        :param max_na_values: proportion threshold of max na values
-        :param max_unique_values:
-        :return:
-        """
-        if max_na_values is not None:
-            cleaning.dropna_columns(
-                data=self.data, max_na_values=max_na_values
-            )
-            # TODO: Add log information
-
-        if max_unique_values is not None:
-            cleaning.drop_columns_with_unique_values(
-                data=self.data, max_unique_values=max_unique_values
-            )
-            # TODO: Add log information
+        return self.sets[item]
 
     def import_from(
-        self, source: str, dset_id: str=None,
-        index_col: str=None, target_col: str=None
+        self, source: str, dset_id: str = None,
+        index_col: str = None, target_col: str = None
     ):
         """
 
@@ -130,7 +51,8 @@ class SkData:
             ext = _source[-1].lower()
             file_name = _source[-2].lower().split(os.path.sep)[-1]
         except Exception:
-            raise Exception('[EE] Please inform a filename with extension.')
+            raise Exception(
+                '[EE] Please inform a filename with extension.')
 
         data = read_from[ext](source)
 
@@ -162,12 +84,116 @@ class SkData:
         if index_col is not None:
             dset.attrs['index'] = index_col
 
-        self.log(dset_id=dset_id, message='Data set creation.')
-
         self.data.flush()
+        self.sets[dset_id] = SkDataSet(self, dset_id)
+        self.sets[dset_id].log(message='Data set creation.')
 
-    def compute(self, dset_id: str):
-        dset = self.data[dset_id]
+    def load(self, file_path: str):
+        self.path = file_path
+        self.data = h5py.File(file_path, 'w')
+
+        for dset_id in self.data.keys():
+            self.sets[dset_id] = SkDataSet(self, dset_id)
+
+
+class SkDataSet:
+    parent = None
+    iid = None
+    computed = None
+
+    def __init__(self, parent: SkData, iid: str):
+        """
+
+        :param parent:
+        :param iid:
+        """
+        self.parent = parent
+        self.iid = iid
+
+    def __getitem__(self, item):
+        if item not in self.parent.data[self.iid].dtype.names:
+            raise Exception('Item not found')
+
+        return SkDataColumn(parent=self, column_name=item)
+
+    def attr_update(self, attr: str, value: object):
+        """
+
+        :param attr:
+        :param value:
+        :return:
+        """
+
+        attr_obj = self.attr_load(attr, type(value)())
+
+        if isinstance(value, list):
+            attr_obj += value
+        elif isinstance(value,  dict):
+            attr_obj.update(value)
+        else:
+            raise Exception('Attribute type not identified.')
+
+        self.attr_dump(attr, attr_obj)
+
+    def attr_dump(self, attr: str, value: object):
+        """
+
+        :param attr:
+        :param value:
+        :return:
+        """
+        dset = self.parent.data[self.iid]
+        dset.attrs[attr] = pickle.dumps(value, protocol=0)
+
+    def attr_load(self, attr: str, default: object = {}) -> object:
+        """
+
+        :param attr:
+        :param default:
+        :return:
+        """
+        dset = self.parent.data[self.iid]
+
+        if attr not in dset.attrs:
+            return default
+
+        return pickle.loads(dset.attrs[attr])
+
+    def categorize(
+        self, col_name: str = None, categories: dict = None,
+        max_categories: float = 0.15
+    ):
+        """
+
+        :param col_name:
+        :param categories:
+        :param max_categories:
+        :return:
+        """
+        _categories = {}
+        _col_name = ("'%s'" % col_name if col_name is not None else 'None')
+
+        str_compute = '''
+        lambda _data: (
+            cleaning.categorize(
+                data=_data, col_name={}, categories={}, max_categories={}
+            )
+        )
+        '''.format(_col_name, str(categories), max_categories)
+
+        str_compute = str_simplify(str_compute)
+
+        _categories[col_name] = dict(
+            col_name=col_name, categories=categories,
+            max_categories=max_categories
+        )
+
+        self.attr_update(attr='categories', value=_categories)
+        self.attr_update(attr='computes', value=[str_compute])
+        # TODO: Add log information
+
+    def compute(self):
+        dset = self.parent.data[self.iid]
 
         index_col = dset.attrs['index']
 
@@ -187,30 +213,70 @@ class SkData:
                     dset.attrs['null_string'], np.nan, inplace=True
                 )
 
-        if 'computes' in dset.attrs:
-            computes = pickle.loads(dset.attrs['computes'])
+        computes = self.attr_load(attr='computes', default=[])
+        for compute in computes:
+            eval(compute)(df)
 
-            for compute in computes:
-                eval(compute)(df)
+        self.computed = df
+        return df.copy()
 
-        return df
+    def drop_columns(
+        self, max_na_values: int = None, max_unique_values: int = None
+    ):
+        """
+        When max_na_values was informed, remove columns when the proportion of
+        total NA values more than max_na_values threshold.
 
-    def load(self, file_path: str):
-        self.path = file_path
-        self.data = h5py.File(file_path, 'w')
+        When max_unique_values was informed, remove columns when the proportion
+        of the total of unique values is more than the max_unique_values
+        threshold, just for columns with type as object or category.
 
-    def log(self, dset_id: str, message: str):
+        :param max_na_values: proportion threshold of max na values
+        :param max_unique_values:
+        :return:
+        """
+        str_compute = ''
+
+        if max_na_values is not None:
+            str_compute = '''
+            lambda _data: (
+                cleaning.dropna_columns(
+                    data=_data, max_na_values={}
+                )
+            )'''.format(max_na_values)
+            # TODO: Add log information
+
+        if max_unique_values is not None:
+            str_compute = '''
+            lambda _data: (
+                cleaning.drop_columns_with_unique_values(
+                    data=_data, max_unique_values={}
+                )
+            )'''.format(max_unique_values)
+            # TODO: Add log information
+        str_compute = str_simplify(str_compute)
+        self.attr_update(attr='computes', value=[str_compute])
+
+    def dropna(self):
+        """
+        :return:
+        """
+        str_compute = 'lambda _data: (_data.dropna(inplace=True))'
+        # TODO: Add log information
+
+        self.attr_update(attr='computes', value=[str_compute])
+
+    def log(self, message: str):
         """
 
-        :param dset_id:
         :param message:
         :return:
 
         """
-        dset_log_id = '_%s_log' % dset_id
+        dset_log_id = '_%s_log' % self.iid
 
-        if dset_log_id not in self.data.keys():
-            dset = self.data.create_dataset(
+        if dset_log_id not in self.parent.data.keys():
+            dset = self.parent.data.create_dataset(
                 dset_log_id, shape=(1,),
                 dtype=np.dtype([
                     ('dt_log', '<i8'),
@@ -218,7 +284,7 @@ class SkData:
                 ])
             )
         else:
-            dset = self.data[dset_id]
+            dset = self.parent.data[dset_log_id]
 
         timestamp = np.array(
             datetime.now().strftime("%s")
@@ -226,14 +292,39 @@ class SkData:
 
         dset['dt_log'] = timestamp.view('<i8')
         dset['message'] = message
-        self.data.flush()
+        self.parent.data.flush()
 
-    def summary(self) -> pd.DataFrame:
+    def summary(self, compute=False) -> pd.DataFrame:
         """
-
+        :param compute: if should call compute method
         :return:
         """
-        return summary(self.data)
+        if compute or self.computed is None:
+            self.compute()
+        return summary(self.computed)
+
+
+class SkDataColumn:
+    parent = None
+    column_name = None
+
+    def __init__(self, parent: SkDataSet, column_name: str):
+        self.parent = parent
+        self.column_name = column_name
+
+    def replace(self, dict_map: dict):
+        """
+
+        :param dict_map:
+        :return:
+        """
+        str_compute = '''
+        lambda _data: _data['{}'].replace({}, inplace=True)
+        '''.format(self.column_name, str(dict_map))
+
+        str_compute = str_simplify(str_compute)
+
+        self.parent.attr_update('computes', [str_compute])
 
 
 def pandas_dtype_to_hdf5(d):
@@ -287,6 +378,24 @@ def summary(data: pd.DataFrame) -> pd.DataFrame:
         left_index=True, right_index=True
     )
     return df
+
+
+def str_simplify(text: str):
+    """
+
+    :param text:
+    :return:
+    """
+    # TODO: replace it using regex
+    __text = text
+    text = text.replace('  ', ' ')
+
+    while not text == __text:
+        __text = text
+        text = text.replace('  ', ' ')
+
+    text = text.strip().replace('\n', '')
+    return text
 
 
 def cross_fields(

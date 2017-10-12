@@ -7,3 +7,4 @@ ipywidgets
 IPython
 h5py
 PyTables
+odo

@@ -1,7 +1,5 @@
 from datetime import datetime
-# local from import
-
-from . import cleaning
+from odo import odo
 
 import h5py
 import numpy as np
@@ -41,20 +39,15 @@ class SkData:
         :param dset_id: data set id
         :param index_col:
         :param target_col:
-        """
-        read_from = {
-            'csv': pd.read_csv
-        }
 
+        """
         try:
-            _source = source.split('.')
-            ext = _source[-1].lower()
-            file_name = _source[-2].lower().split(os.path.sep)[-1]
+            file_name = source.split('.')[-2].lower().split(os.path.sep)[-1]
         except Exception:
             raise Exception(
                 '[EE] Please inform a filename with extension.')
 
-        data = read_from[ext](source)
+        data = odo(source=source, target=pd.DataFrame)
 
         if dset_id is None:
             dset_id = file_name

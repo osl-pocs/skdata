@@ -57,6 +57,27 @@ def categorize(
     return _categories
 
 
+def dropna(data: pd.DataFrame, axis: int, **params):
+    """
+    Remove columns with more NA values than threshold level
+
+    :param data:
+    :param axis:
+      Axes are defined for arrays with more than one dimension.
+      A 2-dimensional array has two corresponding axes: the first running
+      vertically downwards across rows (axis 0), and the second running
+      horizontally across columns (axis 1).
+      (https://docs.scipy.org/doc/numpy-1.10.0/glossary.html)
+    :param params:
+    :return:
+
+    """
+    if axis == 0:
+        dropna_rows(data=data, **params)
+    else:
+        dropna_columns(data=data, **params)
+
+
 def dropna_columns(data: pd.DataFrame, max_na_values: int=0.15):
     """
     Remove columns with more NA values than threshold level
@@ -71,18 +92,18 @@ def dropna_columns(data: pd.DataFrame, max_na_values: int=0.15):
     data.drop(df_na[df_na].index, axis=1, inplace=True)
 
 
-def dropna_rows(data: pd.DataFrame, column_names: str=None):
+def dropna_rows(data: pd.DataFrame, columns_name: str=None):
     """
     Remove columns with more NA values than threshold level
 
     :param data:
-    :param column_names:
+    :param columns_name:
     :return:
 
     """
     params = {}
-    if column_names is not None:
-        params.update({'subset': column_names.split(',')})
+    if columns_name is not None:
+        params.update({'subset': columns_name.split(',')})
     data.dropna(inplace=True, **params)
 
 

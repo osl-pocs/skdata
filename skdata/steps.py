@@ -42,38 +42,119 @@ from functools import reduce
 # local
 from .cleaning import *
 
+import json
+import numpy as np
 import pandas as pd
 
 
-def expr(dataset: pd.DataFrame, step: str):
-    # aliases
-    op = step['operation']
-    k = step['column'] if 'column' in step else None
-    k_new = k if 'new-column' not in step else step['new-column']
-    c_expr = step['expression']
+class StepSkData:
+    parent = None
 
-    if op == 'text-transform':
-        f_expr = eval('lambda value: %s' % c_expr)
-        dataset[k_new] = dataset[k].apply(f_expr)
+    def __init__(self, parent: 'SkDataSet'):
+        """
 
-    elif op == 'categorize':
-        params = dict(data=dataset, col_name=k, categories=eval(c_expr))
-        params.update(
-            {'new_col_name': k_new} if 'new-column' in step else {}
+        :param parent:
+        """
+        self.parent = parent
+
+    def compute(
+        self, start: int = None, end: int = None,
+        steps_id: list = None
+    ) -> pd.DataFrame:
+        """
+
+        :param start:
+        :param end:
+        :param steps_id:
+        :return:
+
+        """
+        dset = self.parent.parent.data[self.parent.iid]
+
+        index_col = dset.attrs['index']
+
+        keys = tuple(
+            k for k in dset.dtype.names[:]
+            if k not in [index_col]
         )
-        categorize(**params)
 
-    elif op == 'fill-na':
-        fill = c_expr
-        if c_expr in ['mean', 'max', 'min', 'median']:
-            fill = dataset.eval('%s.%s()' % (k, c_expr))
-        dataset[k].fillna(fill, inplace=True)
+        df = pd.DataFrame(
+            dset[keys], index=dset[index_col]
+        )
 
-    elif op == 'drop-na':
-        data = dataset  # data is a expression variable
-        eval('dropna_%s' % c_expr)
+        for k in df.keys():
+            if df[k].dtype == pd.api.types.pandas_dtype('O'):
+                df[k] = df[k].str.decode("utf-8")
+                df[k].replace(
+                    dset.attrs['null_string'], np.nan, inplace=True
+                )
 
-    return dataset
+        steps = self.parent.attr_load(attr='steps', default=[])
+
+        if steps_id is not None:
+            _steps = [s for i, s in enumerate(steps) if i in steps_id]
+        else:
+            _steps = steps[start:end]
+
+        for step in _steps:
+            df = self.expr(df, step)
+
+        return df
+
+    def export_steps(self, file_path: str, mode: str = 'a'):
+        """
+
+        :param file_path:
+        :param mode: [a]ppend|[w]rite
+        :return:
+
+        """
+        pass
+
+    @staticmethod
+    def expr(data: pd.DataFrame, step: str):
+        # aliases
+        op = step['operation']
+        k = step['column'] if 'column' in step else None
+        k_new = k if 'new-column' not in step else step['new-column']
+        c_expr = step['expression']
+
+        if op == 'text-transform':
+            f_expr = eval('lambda value: %s' % c_expr)
+            data[k_new] = data[k].apply(f_expr)
+
+        elif op == 'categorize':
+            params = dict(data=data, col_name=k, categories=eval(c_expr))
+            params.update(
+                {'new_col_name': k_new} if 'new-column' in step else {}
+            )
+            categorize(**params)
+
+        elif op == 'fill-na':
+            fill = c_expr
+            if c_expr in ['mean', 'max', 'min', 'median']:
+                fill = data.eval('%s.%s()' % (k, c_expr))
+            data[k].fillna(fill, inplace=True)
+
+        elif op == 'drop-na':
+            params = eval(c_expr)
+            dropna(data, **params)
+
+        elif op == 'drop-unique':
+            params = eval(c_expr)
+            drop_columns_with_unique_values(data, **params)
+
+        return data
+
+    def import_steps(self, file_path: str, mode: str='a'):
+        """
+
+        :param file_path:
+        :param mode: [a]ppend|[w]rite
+        :return:
+
+        """
+        steps_json = json.load(file_path)
 
 
 def replace(value: str, replace_dict: dict):
@@ -85,26 +166,3 @@ def replace(value: str, replace_dict: dict):
     return reduce(
         lambda x, y: x.replace(y, replace_dict[y]), replace_dict, value
     )
-
-
-def compute(
-    datasets: {}, steps: list, start: int = None, end: int = None,
-    steps_id: list = None
-):
-    """
-
-    :param datasets:
-    :param steps:
-    :param start:
-    :param end:
-    :param steps_id:
-    :return:
-    """
-
-    if steps_id is not None:
-        _steps = [s for i, s in enumerate(steps) if i in steps_id]
-    else:
-        _steps = steps[start:end]
-
-    for step in _steps:
-        datasets[step['data-set']] = expr(datasets[step['data-set']], step)

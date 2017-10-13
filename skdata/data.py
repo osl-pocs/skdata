@@ -1,7 +1,7 @@
 from datetime import datetime
 from odo import odo
 # local
-from .steps import compute
+from .steps import StepSkData
 
 import h5py
 import numpy as np
@@ -105,6 +105,7 @@ class SkDataSet:
         """
         self.parent = parent
         self.iid = iid
+        self.steps = StepSkData(parent=self)
 
     def __getitem__(self, item):
         if item not in self.parent.data[self.iid].dtype.names:
@@ -156,31 +157,8 @@ class SkDataSet:
         return pickle.loads(dset.attrs[attr])
 
     def compute(self):
-        dset = self.parent.data[self.iid]
-
-        index_col = dset.attrs['index']
-
-        keys = tuple(
-            k for k in dset.dtype.names[:]
-            if k not in [index_col]
-        )
-
-        df = pd.DataFrame(
-            dset[keys], index=dset[index_col]
-        )
-
-        for k in df.keys():
-            if df[k].dtype == pd.api.types.pandas_dtype('O'):
-                df[k] = df[k].str.decode("utf-8")
-                df[k].replace(
-                    dset.attrs['null_string'], np.nan, inplace=True
-                )
-
-        steps = self.attr_load(attr='steps', default=[])
-        compute(datasets={self.iid: df}, steps=steps)
-
-        self.result = df
-        return df.copy()
+        self.result = self.steps.compute()
+        return self.result.copy()
 
     def drop_columns(
         self, max_na_values: int = None, max_unique_values: int = None
@@ -203,15 +181,13 @@ class SkDataSet:
             step = {
                 'data-set': self.iid,
                 'operation': 'drop-na',
-                'expression': 'columns(data, max_na_values=%s)' % max_na_values
+                'expression': '{"max_na_values":%s, "axis": 1}' % max_na_values
             }
         if max_unique_values is not None:
             step = {
                 'data-set': self.iid,
                 'operation': 'drop-unique',
-                'expression': 'columns(data, max_na_values=%s)' % (
-                    max_unique_values
-                )
+                'expression': '{"max_unique_values":%s}' % max_unique_values
             }
         self.attr_update(attr='steps', value=[step])
 
@@ -223,7 +199,7 @@ class SkDataSet:
         step = {
             'data-set': self.iid,
             'operation': 'drop-na',
-            'expression': 'rows(data)'
+            'expression': '{"axis": 0}'
         }
 
         self.attr_update(attr='steps', value=[step])
@@ -362,24 +338,6 @@ def summary(data: pd.DataFrame) -> pd.DataFrame:
         left_index=True, right_index=True
     )
     return df
-
-
-def str_simplify(text: str):
-    """
-
-    :param text:
-    :return:
-    """
-    # TODO: replace it using regex
-    __text = text
-    text = text.replace('  ', ' ')
-
-    while not text == __text:
-        __text = text
-        text = text.replace('  ', ' ')
-
-    text = text.strip().replace('\n', '')
-    return text
 
 
 def cross_fields(

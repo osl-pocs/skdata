@@ -2,12 +2,13 @@ import pandas as pd
 
 
 def categorize(
-    data, col_name: str = None, categories: dict = None,
-    max_categories: float = 0.15
+    data, col_name: str = None, new_col_name: str = None,
+    categories: dict = None, max_categories: float = 0.15
 ):
     """
     :param data:
     :param col_name:
+    :param new_col_name:
     :param categories:
     :param max_categories: max proportion threshold of categories
     :return: new categories
@@ -28,6 +29,10 @@ def categorize(
         ]
     else:
         # create a list with col_name
+        if new_col_name is not None:
+            data[new_col_name] = data[col_name]
+            col_name = new_col_name
+
         cols = [col_name]
 
     for c in cols:
@@ -64,6 +69,21 @@ def dropna_columns(data: pd.DataFrame, max_na_values: int=0.15):
     size = data.shape[0]
     df_na = (data.isnull().sum()/size) >= max_na_values
     data.drop(df_na[df_na].index, axis=1, inplace=True)
+
+
+def dropna_rows(data: pd.DataFrame, column_names: str=None):
+    """
+    Remove columns with more NA values than threshold level
+
+    :param data:
+    :param column_names:
+    :return:
+
+    """
+    params = {}
+    if column_names is not None:
+        params.update({'subset': column_names.split(',')})
+    data.dropna(inplace=True, **params)
 
 
 def drop_columns_with_unique_values(

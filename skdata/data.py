@@ -1,5 +1,7 @@
 from datetime import datetime
 from odo import odo
+# local
+from .steps import compute
 
 import h5py
 import numpy as np
@@ -92,7 +94,8 @@ class SkData:
 class SkDataSet:
     parent = None
     iid = None
-    computed = None
+    steps = None
+    result = None
 
     def __init__(self, parent: SkData, iid: str):
         """
@@ -173,11 +176,10 @@ class SkDataSet:
                     dset.attrs['null_string'], np.nan, inplace=True
                 )
 
-        computes = self.attr_load(attr='computes', default=[])
-        for compute in computes:
-            eval(compute)(df)
+        steps = self.attr_load(attr='steps', default=[])
+        compute(datasets={self.iid: df}, steps=steps)
 
-        self.computed = df
+        self.result = df
         return df.copy()
 
     def drop_columns(
@@ -195,39 +197,40 @@ class SkDataSet:
         :param max_unique_values:
         :return:
         """
-        str_compute = ''
+        step = {}
 
         if max_na_values is not None:
-            str_compute = '''
-            lambda _data: (
-                cleaning.dropna_columns(
-                    data=_data, max_na_values={}
-                )
-            )'''.format(max_na_values)
-            # TODO: Add log information
-
+            step = {
+                'data-set': self.iid,
+                'operation': 'drop-na',
+                'expression': 'columns(data, max_na_values=%s)' % max_na_values
+            }
         if max_unique_values is not None:
-            str_compute = '''
-            lambda _data: (
-                cleaning.drop_columns_with_unique_values(
-                    data=_data, max_unique_values={}
+            step = {
+                'data-set': self.iid,
+                'operation': 'drop-unique',
+                'expression': 'columns(data, max_na_values=%s)' % (
+                    max_unique_values
                 )
-            )'''.format(max_unique_values)
-            # TODO: Add log information
-        str_compute = str_simplify(str_compute)
-        self.attr_update(attr='computes', value=[str_compute])
+            }
+        self.attr_update(attr='steps', value=[step])
 
     def dropna(self):
         """
         :return:
-        """
-        str_compute = 'lambda _data: (_data.dropna(inplace=True))'
-        # TODO: Add log information
 
-        self.attr_update(attr='computes', value=[str_compute])
+        """
+        step = {
+            'data-set': self.iid,
+            'operation': 'drop-na',
+            'expression': 'rows(data)'
+        }
+
+        self.attr_update(attr='steps', value=[step])
 
     def log(self, message: str):
         """
+        @deprecated
 
         :param message:
         :return:
@@ -259,9 +262,9 @@ class SkDataSet:
         :param compute: if should call compute method
         :return:
         """
-        if compute or self.computed is None:
+        if compute or self.result is None:
             self.compute()
-        return summary(self.computed)
+        return summary(self.result)
 
 
 class SkDataColumn:
@@ -280,45 +283,32 @@ class SkDataColumn:
         :param categories:
         :param max_categories:
         :return:
+
         """
-        _categories = {}
-        _col_name = (
-            "'%s'" % self.column_name if self.column_name is not None else
-            'None'
-        )
+        step = {
+            'data-set': self.parent.iid,
+            'operation': 'categorize',
+            'column': self.column_name,
+            'expression': str(categories)  # missing max_categories
+        }
 
-        str_compute = '''
-        lambda _data: (
-            cleaning.categorize(
-                data=_data, col_name={}, categories={}, max_categories={}
-            )
-        )
-        '''.format(_col_name, str(categories), max_categories)
-
-        str_compute = str_simplify(str_compute)
-
-        _categories[self.column_name] = dict(
-            col_name=self.column_name, categories=categories,
-            max_categories=max_categories
-        )
-
-        self.parent.attr_update(attr='categories', value=_categories)
-        self.parent.attr_update(attr='computes', value=[str_compute])
-        # TODO: Add log information
+        self.parent.attr_update(attr='steps', value=[step])
 
     def replace(self, dict_map: dict):
         """
 
         :param dict_map:
         :return:
+
         """
-        str_compute = '''
-        lambda _data: _data['{}'].replace({}, inplace=True)
-        '''.format(self.column_name, str(dict_map))
+        step = {
+            'data-set': self.parent.iid,
+            'operation': 'text-transform',
+            'column': self.column_name,
+            'expression': 'replace(value, {})'.format(str(dict_map))
+        }
 
-        str_compute = str_simplify(str_compute)
-
-        self.parent.attr_update('computes', [str_compute])
+        self.parent.attr_update('steps', [step])
 
 
 def pandas_dtype_to_hdf5(d):

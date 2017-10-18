@@ -46,9 +46,18 @@ The data analysis process is composed of following steps
 * Visualizing and interpreting your results
 * Deploying your solution
 
+This project contemplates the follow features:
 
-Features
---------
+* Cleaning data
+* Normalizing data
+* Transforming data
+* Exploratory statistics
+* Exploratory visualization
+* Predictive modeling
+* Validating your model
+* Visualizing results
+* Reproducible data analysis
+
 
 Books used as reference to guide this project:
 
@@ -63,18 +72,6 @@ Some other materials used as reference:
 - https://github.com/agconti/kaggle-titanic/blob/master/Titanic.ipynb
 - https://github.com/donnemartin/data-science-ipython-notebooks/blob/master/kaggle/titanic.ipynb
 
-
-This project contemplates the follow features:
-
-* Cleaning data
-* Normalizing data
-* Transforming data
-* Exploratory statistics
-* Exploratory visualization
-* Predictive modeling
-* Validating your model
-* Visualizing results
-* Reproducible data analysis
 
 
 Installing scikit-data

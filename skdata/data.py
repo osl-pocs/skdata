@@ -113,6 +113,18 @@ class SkDataSet:
 
         return SkDataColumn(parent=self, column_name=item)
 
+    def attrs(self, key: str, value: str=None):
+        """
+
+        :param key:
+        :param value:
+        :return:
+        """
+        if value is None:
+            return self.parent.data[self.iid].attrs[key]
+
+        self.parent.data[self.iid].attrs[key] = value
+
     def attr_update(self, attr: str, value: object):
         """
 

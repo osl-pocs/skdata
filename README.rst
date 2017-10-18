@@ -31,16 +31,21 @@ About SciKit Data
 
 The propose of this library is to allow the data analysis process more easy and automatic.
 
-This library is based on some important libraries as:
+The data analysis process is composed of following steps
+(Cuesta, Hector and Kumar, Sampath; 2016):
 
-- pandas;
-- jupyter;
-- matplotlib;
-- scikit-learn;
+* The statement of problem
+* Collecting your data
+* Cleaning the data
+* Normalizing the data
+* Transforming the data
+* Exploratory statistics
+* Exploratory visualization
+* Predictive modeling
+* Validating your model
+* Visualizing and interpreting your results
+* Deploying your solution
 
-
-* Free software: MIT license
-* Documentation: https://skdata.readthedocs.io.
 
 Features
 --------
@@ -50,6 +55,7 @@ Books used as reference to guide this project:
 - https://www.packtpub.com/big-data-and-business-intelligence/clean-data
 - https://www.packtpub.com/big-data-and-business-intelligence/python-data-analysis
 - https://www.packtpub.com/big-data-and-business-intelligence/mastering-machine-learning-scikit-learn
+- https://www.packtpub.com/big-data-and-business-intelligence/practical-data-analysis-second-edition
 
 Some other materials used as reference:
 
@@ -60,27 +66,15 @@ Some other materials used as reference:
 
 This project contemplates the follow features:
 
-- Data conversions:
-
-  - soon ...
-- Data collection:
-
-  - soon ...
-- Data cleaning:
-
-  - ...
-- Data storage:
-
-  - soon ...
-- Data integration:
-
-  - soon ...
-- Data manipulation:
-
-  - ...
-- Outliers removal:
-
-  - ...
+* Cleaning data
+* Normalizing data
+* Transforming data
+* Exploratory statistics
+* Exploratory visualization
+* Predictive modeling
+* Validating your model
+* Visualizing results
+* Reproducible data analysis
 
 
 Installing scikit-data
@@ -126,3 +120,8 @@ you through the process.
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
 
 
+More Information
+----------------
+
+* License: MIT
+* Documentation: https://skdata.readthedocs.io.

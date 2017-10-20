@@ -2,12 +2,13 @@ import pandas as pd
 
 
 def categorize(
-    data, col_name: str = None, categories: dict = None,
-    max_categories: float = 0.15
+    data, col_name: str = None, new_col_name: str = None,
+    categories: dict = None, max_categories: float = 0.15
 ):
     """
     :param data:
     :param col_name:
+    :param new_col_name:
     :param categories:
     :param max_categories: max proportion threshold of categories
     :return: new categories
@@ -28,6 +29,10 @@ def categorize(
         ]
     else:
         # create a list with col_name
+        if new_col_name is not None:
+            data[new_col_name] = data[col_name]
+            col_name = new_col_name
+
         cols = [col_name]
 
     for c in cols:
@@ -52,6 +57,27 @@ def categorize(
     return _categories
 
 
+def dropna(data: pd.DataFrame, axis: int, **params):
+    """
+    Remove columns with more NA values than threshold level
+
+    :param data:
+    :param axis:
+      Axes are defined for arrays with more than one dimension.
+      A 2-dimensional array has two corresponding axes: the first running
+      vertically downwards across rows (axis 0), and the second running
+      horizontally across columns (axis 1).
+      (https://docs.scipy.org/doc/numpy-1.10.0/glossary.html)
+    :param params:
+    :return:
+
+    """
+    if axis == 0:
+        dropna_rows(data=data, **params)
+    else:
+        dropna_columns(data=data, **params)
+
+
 def dropna_columns(data: pd.DataFrame, max_na_values: int=0.15):
     """
     Remove columns with more NA values than threshold level
@@ -64,6 +90,21 @@ def dropna_columns(data: pd.DataFrame, max_na_values: int=0.15):
     size = data.shape[0]
     df_na = (data.isnull().sum()/size) >= max_na_values
     data.drop(df_na[df_na].index, axis=1, inplace=True)
+
+
+def dropna_rows(data: pd.DataFrame, columns_name: str=None):
+    """
+    Remove columns with more NA values than threshold level
+
+    :param data:
+    :param columns_name:
+    :return:
+
+    """
+    params = {}
+    if columns_name is not None:
+        params.update({'subset': columns_name.split(',')})
+    data.dropna(inplace=True, **params)
 
 
 def drop_columns_with_unique_values(

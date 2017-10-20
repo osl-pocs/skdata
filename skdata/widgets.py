@@ -47,7 +47,6 @@ class SkDataWidget:
             table=SkDataTableController(self, table_settings)
         )
 
-
     def _(self, name: str):
         """
         Return layout object
@@ -73,12 +72,13 @@ class SkDataWidget:
         xs = kwargs.pop('xs', self._('xs').value)
         bins = kwargs.pop('bins', self._('bins').value)
         chart_type = kwargs.pop('chart_type', self._('chart_type').value)
+        dset_id = kwargs.pop('dset_id')
 
         table.display(
             y=y,
             xs=xs,
             bins=bins,
-            display_id=self.settings['display_chart_id']
+            dset_id=dset_id
         )
 
         chart.display(
@@ -86,46 +86,38 @@ class SkDataWidget:
             xs=xs,
             bins=bins,
             chart_type=chart_type,
-            display_id=self.settings['display_chart_id']
+            dset_id=dset_id
         )
 
         # disable slider bins if no fields are numerical
         fields = [y] + list(xs)
-        dtypes = self.skd.data[fields].dtypes.values
+        dtypes = self.get_data(dset_id=dset_id)[fields].dtypes.values
         visibility = {True: 'visible', False: 'hidden'}
 
         self._('bins').layout.visibility = visibility[
             float in dtypes or int in dtypes
         ]
 
-    def get_data(self) -> pd.DataFrame:
+    def get_data(self, dset_id: str) -> pd.DataFrame:
         """
 
         :return:
         """
-        return self.skd.data
+        return self.skd[dset_id].result
 
-    def build_layout(self):
+    def build_layout(self, dset_id: str):
         """
-
+        :param dset_id:
         :return:
         """
-        all_fields = list(self.skd().keys())
+        all_fields = list(self.get_data(dset_id=dset_id).keys())
 
-        if self.skd.target is None:
+        try:
+            field_reference = self.skd[dset_id].attrs('target')
+        except:
             field_reference = all_fields[0]
-        else:
-            field_reference = self.skd.target.name
 
         fields_comparison = [all_fields[1]]
-
-        # display ids
-        self.settings['display_table_id'] = (
-            'table_id_%s' % np.random.randint(10000)
-        )
-        self.settings['display_chart_id'] = (
-            'chart_id_%s' % np.random.randint(10000)
-        )
 
         # chart type widget
         self.register_widget(
@@ -166,15 +158,15 @@ class SkDataWidget:
         y_changed = [False]
 
         self.register_widget(
-            box_filter_panel=widgets.HBox([
+            box_filter_panel=widgets.VBox([
                 self._('y'), self._('xs'), self._('bins')
             ])
         )
 
         # layout widgets
         self.register_widget(
-            table=widgets.Output(),
-            chart=widgets.Output()
+            table=widgets.HTML(),
+            chart=widgets.HTML()
         )
 
         self.register_widget(vbox_chart=widgets.VBox([
@@ -182,10 +174,16 @@ class SkDataWidget:
         ]))
 
         self.register_widget(
-            accordion=widgets.Accordion(
-                children=[self._('table'), self._('vbox_chart')]
+            tab=widgets.Tab(
+                children=[
+                    self._('box_filter_panel'),
+                    self._('table'),
+                    self._('vbox_chart')
+                ]
             )
         )
+
+        self.register_widget(dashboard=widgets.HBox([self._('tab')]))
 
         # observe hooks
         def w_y_change(change: dict):
@@ -213,55 +211,57 @@ class SkDataWidget:
             self._('xs').options = _xs
             self._('xs').value = _xs_value
 
-            self._display_result(y=change['new'])
+            self._display_result(y=change['new'], dset_id=dset_id)
 
             y_changed[0] = False  # flow control variable
 
         # widgets registration
 
-        # change accordion settings
-        self._('accordion').set_title(0, 'Data')
-        self._('accordion').set_title(1, 'Chart')
+        # change tab settings
+        self._('tab').set_title(0, 'Filter')
+        self._('tab').set_title(1, 'Data')
+        self._('tab').set_title(2, 'Chart')
 
         # data panel
-        with self._('accordion').children[0]:
-            display('', display_id=self.settings['display_table_id'])
+        self._('table').value = '...'
 
         # chart panel
-        with self._('accordion').children[1].children[1]:
-            display('', display_id=self.settings['display_chart_id'])
+        self._('chart').value = '...'
 
         # create observe callbacks
         self._('bins').observe(
-            lambda change: self._display_result(bins=change['new']),
-            'value'
+            lambda change: (
+                self._display_result(bins=change['new'], dset_id=dset_id)
+            ), 'value'
         )
         self._('y').observe(w_y_change, 'value')
         # execute display result if 'y' was not changing.
         self._('xs').observe(
-            lambda change: self._display_result(xs=change['new'])
-                if not y_changed[0] else None,
-            'value'
+            lambda change: (
+                self._display_result(xs=change['new'], dset_id=dset_id)
+                if not y_changed[0] else None
+            ), 'value'
         )
         self._('chart_type').observe(
-            lambda change: self._display_result(chart_type=change['new']),
-            'value'
+            lambda change: (
+                self._display_result(chart_type=change['new'], dset_id=dset_id)
+            ), 'value'
         )
 
-    def display(self):
+    def display(self, dset_id: str):
         """
-
+        :param dset_id:
         :return:
 
         """
+        # update result
+        self.skd[dset_id].compute()
         # build layout
-        self.build_layout()
-
+        self.build_layout(dset_id=dset_id)
         # display widgets
-        display(self._('box_filter_panel'), self._('accordion'))
-
+        display(self._('dashboard'))
         # display data table and chart
-        self._display_result()
+        self._display_result(dset_id=dset_id)
 
     def register_controller(self, **kwargs):
         """
@@ -313,7 +313,7 @@ class SkDataChartController(SkDataController):
         xs: list,  # fields_comparison
         bins: int,
         chart_type: str,
-        display_id: str
+        dset_id: str
     ):
         """
 
@@ -321,7 +321,7 @@ class SkDataChartController(SkDataController):
         :param xs:
         :param bins:
         :param chart_type:
-        :param display_id:
+        :param dset_id:
         :return:
         """
         chart_param = self.settings
@@ -330,44 +330,42 @@ class SkDataChartController(SkDataController):
         if chart_type == 'grouped':
             # create a cross tab
             d = cross_fields(
-                data=self.parent.get_data(),
+                data=self.parent.get_data(dset_id=dset_id),
                 y=y, xs=xs, bins=bins
             )
         else:
-            d = self.parent.get_data()
+            d = self.parent.get_data(dset_id=dset_id)
             chart_param.update(dict(
                 y=y, xs=xs, bins=bins
             ))
 
         # display chart
-        with w_chart:
-            plot2html(
-                data=d,
-                display_id=self.parent.settings['display_chart_id'],
-                title=self.parent.settings['title'],
-                **chart_param
-            )
+        plot2html(
+            data=d,
+            container=w_chart,
+            title=self.parent.settings['title'],
+            **chart_param
+        )
 
 
 class SkDataTableController(SkDataController):
     # display data and chart
     def display(
-        self, y: str, xs: list or tuple, bins: int, display_id: str
+        self, y: str, xs: list or tuple, bins: int, dset_id: str
     ):
         """
 
         :param xs:
         :param bins:
-        :param chart_type:
-        :param display_id:
+        :param dset_id:
         :return:
         """
         w_table = self.parent.layout['table']
         # create a cross tab
-        d = cross_fields(data=self.parent.get_data(), y=y, xs=xs, bins=bins)
+        d = cross_fields(
+            data=self.parent.get_data(dset_id=dset_id),
+            y=y, xs=xs, bins=bins
+        )
 
         # display data table
-        with w_table:
-            update_display(
-                d, display_id=self.parent.settings['display_table_id']
-            )
+        w_table.value = d.to_html()

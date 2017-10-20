@@ -10,13 +10,13 @@ import pandas as pd
 
 
 def plot2html(
-    data: pd.DataFrame, display_id: str, title: str='Data Analysis',
+    data: pd.DataFrame, container: object, title: str='Data Analysis',
     **kwargs
 ) -> [plt.figure]:
     """
 
     :param data:
-    :param display_id:
+    :param container:
     :param kwargs:
     :return:
     """
@@ -88,8 +88,4 @@ def plot2html(
             plt.close()
         except:
             pass
-
-    update_display(
-        HTML('<img src="data:image/png;base64,%s">' % img),
-        display_id=display_id
-    )
+    container.value = '<img src="data:image/png;base64,%s">' % img

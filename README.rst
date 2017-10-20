@@ -90,8 +90,24 @@ Data Preparation
     transformation functions depending on our data model, and loads the resulting data into
     the destination.
 
+    (...)
+
+    **Data reduction methods**
+
+    Data reduction is the transformation of numerical or alphabetical digital information
+    derived empirically or experimentally into a corrected, ordered, and simplified form.
+    Reduced data size is very small in volume and comparatively original, hence, the storage
+    efficiency will increase and at the same time we can minimize the data handling costs and
+    will minimize the analysis time also.
+
+    We can use several types of data reduction methods, which are listed as follows:
+
+    * Filtering and sampling
+    * Binned algorithm
+    * Dimensionality reduction
 
     (Cuesta, Hector and Kumar, Sampath; 2016)
+
 
 Data exploration
 ----------------

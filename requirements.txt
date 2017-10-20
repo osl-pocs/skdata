@@ -2,9 +2,8 @@ pandas
 numpy
 scikit-learn
 matplotlib
+ipython
 jupyter
 ipywidgets
-IPython
 h5py
-PyTables
 odo

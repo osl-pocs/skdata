@@ -10,12 +10,16 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    'IPython',
+    'pandas',
+    'numpy',
+    'scipy',
+    'scikit-learn',
+    'matplotlib',
+    'ipython',
     'jupyter',
     'ipywidgets',
-    'matplotlib',
-    'pandas',
-    'numpy'
+    'h5py',
+    'odo'
 ]
 
 test_requirements = [

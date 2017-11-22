@@ -36,10 +36,14 @@ class TestCleaning(unittest.TestCase):
 
         _data.Embarked.replace(embarked_dict, inplace=True)
 
-        cleaning.categorize(_data, 'Survived', survived_dict)
-        cleaning.categorize(_data, 'Pclass', pclass_dict)
-        cleaning.categorize(_data, 'Sex')
-        cleaning.categorize(_data, 'Embarked')
+        cleaning.categorize(
+            data=_data, col_name='Survived', categories=survived_dict
+        )
+        cleaning.categorize(
+            data=_data, col_name='Pclass', categories=pclass_dict
+        )
+        cleaning.categorize(data=_data, col_name='Sex')
+        cleaning.categorize(data=_data, col_name='Embarked')
 
         assert _data.Survived.dtype == 'category'
         assert _data.Pclass.dtype == 'category'

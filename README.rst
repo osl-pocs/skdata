@@ -92,6 +92,12 @@ Data Preparation
 
     (...)
 
+    Some important transformations:
+
+    * Text facet and Clustering
+    * Numeric fact
+    * Replace
+
     **Data reduction methods**
 
     Data reduction is the transformation of numerical or alphabetical digital information
@@ -118,7 +124,7 @@ Data exploration
 
     (...)
 
-    The goals of exploratory data analysis are as follows:
+    The goals of exploratory data analysis (EDA) are as follows:
 
     * Detection of data errors
     * Checking of assumptions
@@ -126,8 +132,22 @@ Data exploration
     * Preliminary selection of appropriate models
     * Determining relationships between the variables
 
+    (...)
+
+    The four types of EDA are univariate nongraphical, multivariate nongraphical, univariate
+    graphical, and multivariate graphical. The nongraphical methods refer to the calculation of
+    summary statistics or the outlier detection. In this book, we will focus on the univariate and
 
     (Cuesta, Hector and Kumar, Sampath; 2016)
+
+**Outlier Detection**
+
+Two outlier detection method should be used, initially, for SkData are:
+
+* IQR;
+* Chauvenet.
+
+Another methods should be implemented soon [1].
 
 
 Prepare data to Predictive modeling
@@ -176,6 +196,14 @@ Quantitative and Qualitative data analysis
     audible and visual data (digital images or sounds).
 
     (Cuesta, Hector and Kumar, Sampath; 2016)
+
+
+Reproducibility for Data Analysis
+---------------------------------
+
+A good way to promote reproducibility for data analysis is store the
+operation history. This history can be used to prepare another dataset
+with the same steps (operations).
 
 
 Books used as reference to guide this project:
@@ -248,3 +276,8 @@ References
 ----------
 
 * CUESTA, Hector; KUMAR, Sampath. Practical Data Analysis. Packt Publishing Ltd, 2016.
+
+
+**Electronic materials**
+
+* [1] http://www.datasciencecentral.com/profiles/blogs/introduction-to-outlier-detection-methods

@@ -71,16 +71,21 @@ class StepSkData:
         """
         dset = self.parent.parent.data[self.parent.iid]
 
-        index_col = dset.attrs['index']
+        try:
+            index_col = dset.attrs['index']
+        except:
+            index_col = None
 
         keys = tuple(
             k for k in dset.dtype.names[:]
             if k not in [index_col]
         )
 
-        df = pd.DataFrame(
-            dset[keys], index=dset[index_col]
-        )
+        params = {}
+        if index_col is not None:
+            params['index'] = dset[index_col]
+
+        df = pd.DataFrame(dset[keys], **params)
 
         for k in df.keys():
             if df[k].dtype == pd.api.types.pandas_dtype('O'):

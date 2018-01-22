@@ -5,10 +5,8 @@ test_skdata
 Tests for `skdata` module.
 """
 # local
-from skdata.data import cross_fields
+from skdata.data import SkDataFrame
 
-import os
-import pandas as pd
 import sys
 import unittest
 
@@ -17,25 +15,25 @@ class TestData(unittest.TestCase):
     data = None
 
     def setUp(self):
-        data_path = os.path.dirname(os.path.dirname(__file__))
-        data_path = os.path.join(data_path, 'data', 'train.csv')
-        self.data = pd.read_csv(data_path, index_col='PassengerId')
+        pass
 
     def tearDown(self):
         pass
 
-    def test_000_cross_fields(self):
-        data = cross_fields(
-            data=self.data, y='Survived', xs=['Sex'], bins=None
-        )
+    def test_df(self):
+        skdf = SkDataFrame({'a': [1, 5]})
 
-        died = 0
-        survived = 1
+        assert skdf.sum().values[0] == 6
+        assert len(skdf.steps) == 0
 
-        assert data[died].female == 81
-        assert data[died].male == 468
-        assert data[survived].female == 233
-        assert data[survived].male == 109
+        skdf / 2
+        assert len(skdf.steps) == 0
+
+        skdf += 1
+        assert len(skdf.steps) == 1
+
+        skdf = 1 + skdf + 1
+        assert len(skdf.steps) == 3
 
 
 if __name__ == '__main__':

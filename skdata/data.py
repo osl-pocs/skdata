@@ -140,14 +140,29 @@ class SkDataObject:
     data = None
     steps = []
 
-    def __getitem__(self, x):
-        return getattr(self.data, x)
-
 
 class SkDataFrame(SkDataObject):
     """
 
     """
+    series = {}
+
+    def __getitem__(self, item):
+        if item not in self.series:
+            self.series[item] = SkDataSeries(self.data[item])
+        return self.series[item]
+
+    def __setitem__(self, key, value):
+        if key not in self.series:
+            self.series[key] = SkDataSeries(self.data[key])
+
+        if not isinstance(value, SkDataSeries):
+            self.data[key] = value
+            serie = SkDataSeries(self.data[key])
+        else:
+            serie = value
+        self.series[key] = serie
+
     def __new__(cls, *args, **kwargs):
         """
 

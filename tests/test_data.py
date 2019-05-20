@@ -42,7 +42,7 @@ class TestData(unittest.TestCase):
 
     def test_titanic(self):
         df = DataFrame(
-            pd.read_csv('../data/train.csv', index_col='PassengerId')
+            pd.read_csv('./data/train.csv', index_col='PassengerId')
         )
 
         df['Sex'].replace({

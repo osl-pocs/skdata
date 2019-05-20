@@ -42,7 +42,7 @@ class TestData(unittest.TestCase):
 
     def test_titanic(self):
         df = DataFrame(
-            pd.read_csv('../data/train.csv', index_col='PassengerId')
+            pd.read_csv('./data/train.csv', index_col='PassengerId')
         )
 
         df['Sex'].replace({
@@ -50,27 +50,29 @@ class TestData(unittest.TestCase):
         }, inplace=True)
 
         assert len(df['Sex'].steps) == 1
-        assert len(df.steps) == 1
+        assert len(df.steps) == 2
 
         df['Embarked'].replace({
             'C': 'Cherbourg', 'Q': 'Queenstown', 'S': 'Southampton'
         }, inplace=True)
-
-        assert len(df.steps) == 2
+        
         assert len(df['Embarked'].steps) == 1
         assert len(df['Sex'].steps) == 1
+        assert len(df.steps) == 3
+
 
         df['Sex'] = df['Sex'].astype('category')
 
         assert len(df['Embarked'].steps) == 1
         assert len(df['Sex'].steps) == 2
-        assert len(df.steps) == 3
+        assert len(df.steps) == 4
 
         df['Embarked'] = df['Embarked'].astype('category')
 
-        assert len(df.steps) == 4
         assert len(df['Embarked'].steps) == 2
         assert len(df['Sex'].steps) == 2
+        assert len(df.steps) == 5
+
 
         # survived_dict = {0: 'Died', 1: 'Survived'}
         # pclass_dict = {1: 'Upper Class', 2: 'Middle Class', 3: 'Lower Class'}
